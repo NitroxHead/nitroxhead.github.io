@@ -4,9 +4,10 @@
 format: jb-book
 root: index
 chapters:
-  - file: book/markdown
-  - file: book/notebooks
+  - file: book/python-tips
   - file: book/bibliography
+  - file: book/notebooks
+  - file: book/markdown
 
 # Or you organize the TOC by parts
 

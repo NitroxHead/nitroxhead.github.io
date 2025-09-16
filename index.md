@@ -1,5 +1,5 @@
 # NitroxHead's Tech Blog
-
+ 
 Welcome to my corner of the internet where I share thoughts on software development, data science, and the tools that make our work more effective.
 
 ## Recent Posts

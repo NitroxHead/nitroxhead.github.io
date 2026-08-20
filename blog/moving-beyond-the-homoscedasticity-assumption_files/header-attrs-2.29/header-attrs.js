@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",function(e){var t,n,i,o=document.querySelectorAll("div.section[class*='level'] > :first-child");for(t=0;t<o.length;t++)if(n=o[t],/^h[1-6]$/i.test(n.tagName))for(i=n.attributes;i.length>0;)n.removeAttribute(i[0].name)});

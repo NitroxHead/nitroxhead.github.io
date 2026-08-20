@@ -1,0 +1,1879 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width,initial-scale=1" name="viewport"><meta content="I will be sharing small scripts I
+have. I use them time to time. Before writing them I look for ready made
+ones to save time, these are the ones I couldn’t…" name="description"><title>Small Scripts · NitroxHead</title><meta content="NitroxHead" property="og:site_name"><meta content="article" property="og:type"><meta content="Small Scripts" property="og:title"><meta content="I will be sharing small scripts
+I have. I use them time to time. Before writing them I look for ready
+made ones to save time, these are the ones I couldn’t…" property="og:description"><meta content="https://nitroxhead.github.io/assets/img/mountain.jpg" property="og:image"><meta content="summary_large_image" name="twitter:card"><link href="/feed.xml" rel="alternate" type="application/rss+xml" title="NitroxHead"><link href="/assets/img/avatar.png" rel="icon" type="image/png"><link href="/assets/style.css" rel="stylesheet"><script src="small-scripts_files/header-attrs-2.29/header-attrs.js"></script></head><body><header class="site-header"><a href="/" class="brand"><img alt="" class="avatar" height="400" src="/assets/img/avatar.png" width="400"> NitroxHead</a><nav><div class="nav-drop"><button class="nav-drop-trigger" type="button">Pages</button><div class="nav-drop-menu"><a href="/mathematical-reality/">The Structure of Mathematical Reality</a></div></div><a href="/blog/">Blog</a> <a href="/contact.html">Contact</a> <a href="https://github.com/NitroxHead">GitHub</a></nav></header><main class="wrap"><article><h1>Small Scripts</h1><p class="post-meta">27 December 2023</p><p>I will be sharing small scripts I have. I use them time to time. Before writing them I look for ready made ones to save time, these are the ones I couldn’t find and had to implement my own solution. I hope you can find fitting solution for your use case, enjoy!<br></p><div class="section level2" id="bash"><h2>Bash</h2><div class="section level3" id="ftp_to_gdrive.sh"><h3>ftp_to_gdrive.sh</h3><p><strong>Purpose:</strong></p><p>Some ftp servers have speed limitations and I might need those files right away at some point or use process them on Colab. There for I keep those files in Google Drive. This code will transfer them for you. For not creating load on systems I only make this transaction between 1am and 6am. Also if your download speed is lower than your upload speed it will continue downloading even if the file might have been transferred fully. You can modify it to do everything sequential.</p><p>This script uses <a href="https://github.com/glotlabs/gdrive" rel="nofollow" target="_blank">gdrive</a> CLI client for google drive sided of things.<br></p><p><strong>Known issues:</strong></p><p>It doesn’t keep the file structure of the source</p><p>It is unable to continue where it left of after power cycle. keeps every variable in the RAM.</p><p><strong>Usage:</strong></p><p>I usually use it with nohup<br></p><p><strong>Code:</strong></p><pre><code>#!/bin/bash
+# Function to check if the current hour is between 1am and 6am
+function is_between_1_and_6() {
+  current_hour=$(date +&quot;%H&quot;)
+  [ &quot;$current_hour&quot; -ge 1 ] &amp;&amp; [ &quot;$current_hour&quot; -lt 6 ]
+}
+# FTP variables
+FTP_HOST=&quot;website&quot;
+FTP_USER=&quot;username&quot;
+FTP_PASS=&quot;password&quot;
+FTP_PATH=&quot;/ftp_directory&quot;
+
+# Google Drive variables
+GDRIVE_FOLDER_ID=&quot;google_drive_folder_id&quot;  # Replace with the ID of the Google Drive folder where you want to upload files
+
+# Capture the list of files with full paths into a variable
+file_list=$(lftp -u &quot;$FTP_USER&quot;,&quot;$FTP_PASS&quot; &quot;$FTP_HOST&quot; &lt;&lt;EOF
+cd &quot;$FTP_PATH&quot;
+find
+quit
+EOF
+)</code></pre><p><br></p><pre><code># Loop through the list of file paths
+IFS=$&#39;\n&#39; # Set Internal Field Separator to newline
+for file_path in $file_list; do
+  # Check if the entry is a file and the last character is not &quot;/&quot;
+  if [ &quot;${file_path: -1}&quot; != &quot;/&quot; ]; then
+      while ! is_between_1_and_6; do
+      echo &quot;Waiting for half an hour...&quot;
+      sleep 1800  # Wait for half an hour (1800 seconds)
+    done
+    # Download each file
+    lftp -u &quot;$FTP_USER&quot;,&quot;$FTP_PASS&quot; &quot;$FTP_HOST&quot; -e &quot;cd \&quot;$FTP_PATH\&quot;; get \&quot;$file_path\&quot;; quit&quot;
+
+    # Extract file name from the full path
+    file_name=$(basename &quot;$file_path&quot;)
+
+    # Print debug information
+    echo &quot;Downloaded: $file_path&quot;
+
+    # Run the upload and delete operations in subshells
+    (
+      # Upload the file to Google Drive using gdrive
+      gdrive files upload &quot;$file_name&quot; --parent &quot;$GDRIVE_FOLDER_ID&quot; 
+
+      # Print debug information
+      echo &quot;Uploaded to Google Drive: $file_name&quot;
+
+      # Delete the downloaded file
+      rm &quot;$file_name&quot;
+
+      # Print debug information
+      echo &quot;Deleted: $file_name&quot;
+    ) &amp;
+
+    # Print debug information
+    echo &quot;Initiated upload and delete sub-process for: $file_name&quot;
+  else
+    # Print debug information for skipped files or directories
+    echo &quot;Skipped: $file_path&quot;
+  fi
+done
+
+# Wait for all background processes to finish
+wait
+
+# Add any additional logic that you want to execute after all uploads
+echo &quot;All uploads completed.&quot;</code></pre></div><div class="section level3" id="single-line-sha256-calculator"><h3>Single Line SHA256 Calculator</h3><p><strong>Purpose:</strong> Single line command for unix where it creates checksum for every file and saves them as different files.<br></p><p><strong>Known issues:</strong> not that I know of.<br></p><p><strong>Usage:</strong> Just run it in the directory of interest.<br></p><p><code>for file in *; do sha256sum "$file" &gt; "$file.sha256"; done</code></p></div><div class="section level3" id="reduce_nc_param_multi.sh"><h3>reduce_nc_param_multi.sh</h3><p><strong>Purpose:</strong> Some NetCDF files I use contains variables that I’m not interested in and my laptop can only carry only so much data. For saving on storage space I sometimes reduce variables as it is downloading by running this script. </p><p>It looks for files that are older than 7 days old and as creating new file it only keeps those selected variables. It does it by utilizing NCO tools. It utilizes multicore, max 4 cores, each working on different files.<br></p><p><strong>Known issues:</strong> Nothing major. It doesn’t even have CLI.<br></p><p><strong>Usage:</strong> Edit the variables in the code so it serves your needs. </p><pre><code>#!/bin/bash
+
+# Folder where your .nc files are located
+input_folder=&quot;./full_sized&quot;
+
+# Variables you want to keep (comma-separated, no spaces)
+keep_vars=&quot;vo,uo,latitude,longitude,time&quot;  # Replace with your variables
+output_folder=&quot;./reduced&quot;
+# Create output directory if it doesn&#39;t exist
+mkdir -p &quot;$output_folder&quot;
+
+# Function to process a single file
+process_file() {
+    output_folder=&quot;./reduced&quot;
+    keep_vars=&quot;vo,uo,latitude,longitude,time&quot;  # Replace with your variables
+    local ncfile=&quot;$1&quot;
+    
+    # Get the base filename and create a lock file for it
+    base_filename=$(basename &quot;$ncfile&quot;)
+    lockfile=&quot;$ncfile.lock&quot;
+    
+    # Output file path
+    output_file=&quot;$output_folder/$base_filename&quot;
+    
+    # Check if the lock file exists, meaning the file is being processed
+    if [ -f &quot;$lockfile&quot; ]; then
+        echo &quot;$base_filename is already being processed, skipping...&quot;
+        return
+    fi
+    
+    # Create a lock file
+    touch &quot;$lockfile&quot;
+    
+    # Print the exact command that will be run
+    echo &quot;Processing file: $base_filename&quot;
+    echo &quot;Running command: ncks -O -v \&quot;$keep_vars\&quot; \&quot;$ncfile\&quot; \&quot;$output_file\&quot;&quot;
+    
+    # Remove unwanted variables and save the result to the output file
+    ncks -O -v &quot;$keep_vars&quot; &quot;$ncfile&quot; &quot;$output_file&quot;
+    
+    # Check if ncks succeeded
+    if [ $? -eq 0 ]; then
+        echo &quot;Successfully processed $ncfile and saved to $output_file&quot;
+        
+        # Delete the original file after processing
+        rm &quot;$ncfile&quot;
+        echo &quot;Deleted original file $ncfile&quot;
+    else
+        echo &quot;Error processing $ncfile&quot;
+    fi
+    
+    # Remove the lock file
+    rm &quot;$lockfile&quot;
+}
+
+# Export the function to be used by parallel processes
+export -f process_file
+
+# Loop indefinitely
+while true; do
+    # Find .nc files that were NOT modified today, excluding locked files
+    find &quot;$input_folder&quot; -name &quot;*.nc&quot; -type f -mtime +7 ! -name &quot;*.lock&quot; | \
+    xargs -P 4 -I {} bash -c &#39;process_file &quot;$@&quot;&#39; _ {}
+
+    # Wait a few seconds before scanning the folder again
+    sleep 10
+done</code></pre></div><div class="section level3" id="remove_yellow_background.sh"><h3>remove_yellow_background.sh</h3><p><strong>Purpose:</strong> When you have an old book scanned not always you get perfect white background sometimes you get yellow backgroud which is a problem if you want to print it later. This script removes yellow background from pdf pages. Specificly targets for this colour #FAEBD7 .</p><p><strong>Known issues:</strong> Not that I know of.<br></p><p><strong>Usage:</strong> Provide file location. </p><pre><code>#!/bin/bash
+
+# Check if input PDF filename is provided
+if [ $# -ne 1 ]; then
+    echo &quot;Usage: $0 input.pdf&quot;
+    exit 1
+fi
+
+input_pdf=&quot;$1&quot;
+output_pdf=&quot;cleaned_${input_pdf}&quot;
+
+# Check if input file exists
+if [ ! -f &quot;$input_pdf&quot; ]; then
+    echo &quot;Error: Input file &#39;$input_pdf&#39; not found&quot;
+    exit 1
+fi
+
+# Create a temporary directory for processing
+temp_dir=$(mktemp -d)
+echo &quot;Creating temporary directory: $temp_dir&quot;
+
+# Convert PDF to PNG images
+echo &quot;Converting PDF to images...&quot;
+gm convert -density 300 &quot;$input_pdf&quot; &quot;$temp_dir/page-%03d.png&quot;
+
+# Process each image to remove yellow background
+echo &quot;Removing yellow background from each page...&quot;
+for image in &quot;$temp_dir&quot;/page-*.png; do
+    echo &quot;Processing $(basename &quot;$image&quot;)...&quot;
+    gm convert &quot;$image&quot; -fuzz 40% -fill white -opaque &quot;#FAEBD7&quot; &quot;$image&quot;
+done
+
+# Combine back into PDF
+echo &quot;Combining pages back into PDF...&quot;
+gm convert $(ls &quot;$temp_dir&quot;/page-*.png | sort -V) &quot;$output_pdf&quot;
+
+# Cleanup
+echo &quot;Cleaning up temporary files...&quot;
+rm -rf &quot;$temp_dir&quot;
+
+echo &quot;Process complete! Output saved as: $output_pdf&quot;</code></pre><p><br><br></p></div></div><div class="section level2" id="cc"><h2>C/C++</h2><div class="section level3 Heading__StyledHeading-sc-1c1dgg0-0 diwsLq" id="file-name-id-wide" tabindex="-1"><h3 class="Heading__StyledHeading-sc-1c1dgg0-0 diwsLq">phrase_matcher.cpp</h3><p><strong>Purpose:</strong><br>This script reads a list of phrases from a file and then searches for those phra<br>ses within a large text file. When a line in the large file contains any of the<br>specified phrases, it’s saved to an output file.</p><p>In my use-case using my laptop I get reading speeds of the text file up to 1000 M/s and the process was cpu bound.<br></p><p><strong>Known issues:</strong> not that I know of.<br></p><p><strong>Usage:</strong> This program is a command-line interface (CLI)<strong>;</strong></p><pre><code>./phrase_matcher &lt;phrases_file&gt; &lt;large_file&gt; &lt;output_file&gt;
+  &lt;phrases_file&gt;:      File containing phrases to search for.
+  &lt;large_file&gt;:        Large text file to search within.
+  &lt;output_file&gt;:       File to save matching lines.</code></pre><p><strong>Code:</strong><br></p><pre><code>#include &lt;iostream&gt;
+#include &lt;fstream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+// Function to check if a line contains any of the specified phrases
+bool containsPhrase(const std::string&amp; line, const std::vector&lt;std::string&gt;&amp; phrases) {
+    for (const auto&amp; phrase : phrases) {
+        if (line.find(phrase) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int main(int argc, char* argv[]) {
+    // Check if the correct number of command-line arguments is provided
+    if (argc != 4) {
+        std::cerr &lt;&lt; &quot;Usage: &quot; &lt;&lt; argv[0] &lt;&lt; &quot; &lt;phrases_file&gt; &lt;large_file&gt; &lt;output_file&gt;\n&quot;;
+        return 1;
+    }
+
+    // Open the file containing the phrases
+    std::ifstream phrasesFile(argv[1]);
+    if (!phrasesFile) {
+        std::cerr &lt;&lt; &quot;Error: Unable to open &quot; &lt;&lt; argv[1] &lt;&lt; std::endl;
+        return 1;
+    }
+
+    // Read the phrases into a vector
+    std::vector&lt;std::string&gt; phrases;
+    std::string phrase;
+    while (std::getline(phrasesFile, phrase)) {
+        phrases.push_back(phrase);
+    }
+    phrasesFile.close();
+
+    // Open the large text file to search
+    std::ifstream largeFile(argv[2]);
+    if (!largeFile) {
+        std::cerr &lt;&lt; &quot;Error: Unable to open &quot; &lt;&lt; argv[2] &lt;&lt; std::endl;
+        return 1;
+    }
+
+    // Open the output file to save matching lines
+    std::ofstream outputFile(argv[3]);
+    if (!outputFile) {
+        std::cerr &lt;&lt; &quot;Error: Unable to create &quot; &lt;&lt; argv[3] &lt;&lt; std::endl;
+        return 1;
+    }
+
+    // Search line by line in the large file
+    std::string line;
+    while (std::getline(largeFile, line)) {
+        if (containsPhrase(line, phrases)) {
+            outputFile &lt;&lt; line &lt;&lt; &quot;\n&quot;;
+        }
+    }
+
+    // Close files
+    largeFile.close();
+    outputFile.close();
+
+    std::cout &lt;&lt; &quot;Matching lines saved to &quot; &lt;&lt; argv[3] &lt;&lt; std::endl;
+    return 0;
+}</code></pre></div><div class="section level3" id="compile_r.sh"><h3>compile_R.sh</h3><p><strong>Purpose;</strong></p><p>I was in need of compiling R. So I created this script. once desired version number is provided in the argument it downloads the files and install requirements. it does a generic compilation and installation. I wrote this for version 4.4.3 haven’t tested in other versions or systems.</p><p><strong>Known issues:</strong> Not that I know of.</p><p><strong>Usage:</strong> provide desired version number as argument</p><pre><code>#!/bin/bash
+
+# R Compilation and Installation Script for Ubuntu
+# Usage: ./install_r.sh [VERSION]
+# Example: ./install_r.sh 4.4.2
+
+set -e  # Exit on any error
+
+# Colors for output
+RED=&#39;\033[0;31m&#39;
+GREEN=&#39;\033[0;32m&#39;
+YELLOW=&#39;\033[1;33m&#39;
+BLUE=&#39;\033[0;34m&#39;
+NC=&#39;\033[0m&#39; # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e &quot;${BLUE}[INFO]${NC} $1&quot;
+}
+
+print_success() {
+    echo -e &quot;${GREEN}[SUCCESS]${NC} $1&quot;
+}
+
+print_warning() {
+    echo -e &quot;${YELLOW}[WARNING]${NC} $1&quot;
+}
+
+print_error() {
+    echo -e &quot;${RED}[ERROR]${NC} $1&quot;
+}
+
+# Function to check if command exists
+command_exists() {
+    command -v &quot;$1&quot; &gt;/dev/null 2&gt;&amp;1
+}
+
+# Function to check if running as root
+check_not_root() {
+    if [[ $EUID -eq 0 ]]; then
+        print_error &quot;This script should not be run as root!&quot;
+        print_error &quot;Run it as a regular user. It will ask for sudo when needed.&quot;
+        exit 1
+    fi
+}
+
+# Function to get R version
+get_r_version() {
+    if [[ $# -eq 0 ]]; then
+        print_error &quot;No R version specified!&quot;
+        echo &quot;Usage: $0 [VERSION]&quot;
+        echo &quot;Example: $0 4.4.2&quot;
+        echo &quot;&quot;
+        echo &quot;Available versions can be found at: https://cran.r-project.org/src/base/&quot;
+        exit 1
+    fi
+    
+    R_VERSION=&quot;$1&quot;
+    R_MAJOR=$(echo $R_VERSION | cut -d. -f1)
+    
+    print_status &quot;Target R version: $R_VERSION&quot;
+}
+
+# Function to install dependencies
+install_dependencies() {
+    print_status &quot;Updating package lists...&quot;
+    sudo apt update
+    
+    print_status &quot;Installing essential build tools...&quot;
+    sudo apt install -y build-essential gfortran
+    
+    print_status &quot;Installing R dependencies...&quot;
+    sudo apt install -y \
+        libreadline-dev \
+        libx11-dev \
+        libxt-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libcairo2-dev \
+        xvfb \
+        libbz2-dev \
+        libzstd-dev \
+        liblzma-dev \
+        libcurl4-openssl-dev \
+        texinfo \
+        libpcre2-dev \
+        libblas-dev \
+        liblapack-dev \
+        libssl-dev \
+        libxml2-dev \
+        libfontconfig1-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libfreetype6-dev \
+        libtiff5-dev \
+        libicu-dev
+    
+    print_success &quot;Dependencies installed successfully&quot;
+}
+
+# Function to download and extract R source
+download_r_source() {
+    WORK_DIR=&quot;$HOME/r-build-$R_VERSION&quot;
+    
+    print_status &quot;Creating working directory: $WORK_DIR&quot;
+    mkdir -p &quot;$WORK_DIR&quot;
+    cd &quot;$WORK_DIR&quot;
+    
+    # Construct download URL
+    R_URL=&quot;https://cran.r-project.org/src/base/R-${R_MAJOR}/R-${R_VERSION}.tar.gz&quot;
+    R_TARBALL=&quot;R-${R_VERSION}.tar.gz&quot;
+    R_DIR=&quot;R-${R_VERSION}&quot;
+    
+    print_status &quot;Downloading R source from: $R_URL&quot;
+    
+    if ! wget -q --show-progress &quot;$R_URL&quot;; then
+        print_error &quot;Failed to download R source!&quot;
+        print_error &quot;Please check if version $R_VERSION exists at:&quot;
+        print_error &quot;https://cran.r-project.org/src/base/R-${R_MAJOR}/&quot;
+        exit 1
+    fi
+    
+    print_status &quot;Extracting R source...&quot;
+    tar -xzf &quot;$R_TARBALL&quot;
+    
+    if [[ ! -d &quot;$R_DIR&quot; ]]; then
+        print_error &quot;Failed to extract R source or directory not found!&quot;
+        exit 1
+    fi
+    
+    cd &quot;$R_DIR&quot;
+    print_success &quot;R source downloaded and extracted&quot;
+}
+
+# Function to configure R build
+configure_r() {
+    print_status &quot;Configuring R build...&quot;
+    
+    # Temporarily remove conda from PATH to avoid conflicts
+    if command_exists conda; then
+        print_warning &quot;Conda detected. Temporarily removing from PATH to avoid conflicts...&quot;
+        export PATH=&quot;/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin&quot;
+    fi
+    
+    # Basic configuration - reliable and widely compatible
+    ./configure --prefix=/usr/local \
+                --enable-R-shlib \
+                --enable-memory-profiling \
+                --with-blas \
+                --with-lapack \
+                --with-readline \
+                --with-cairo \
+                --with-libpng \
+                --with-jpeglib \
+                --with-libtiff \
+                --enable-BLAS-shlib=no
+    
+    if [[ $? -eq 0 ]]; then
+        print_success &quot;R configured successfully&quot;
+    else
+        print_error &quot;R configuration failed!&quot;
+        exit 1
+    fi
+}
+
+# Function to compile R
+compile_r() {
+    print_status &quot;Starting R compilation (this may take 15-30 minutes)...&quot;
+    
+    # Get number of CPU cores
+    NCORES=$(nproc)
+    
+    # Use all cores but limit to avoid memory issues
+    if [[ $NCORES -gt 4 ]]; then
+        MAKE_JOBS=4
+    else
+        MAKE_JOBS=$NCORES
+    fi
+    
+    print_status &quot;Using $MAKE_JOBS parallel jobs for compilation&quot;
+    
+    if make -j$MAKE_JOBS; then
+        print_success &quot;R compiled successfully&quot;
+    else
+        print_warning &quot;Compilation with $MAKE_JOBS jobs failed. Trying with single job...&quot;
+        make clean
+        if make -j1; then
+            print_success &quot;R compiled successfully (single-threaded)&quot;
+        else
+            print_error &quot;R compilation failed!&quot;
+            exit 1
+        fi
+    fi
+}
+
+# Function to install R
+install_r() {
+    print_status &quot;Installing R to /usr/local...&quot;
+    
+    if sudo make install; then
+        print_success &quot;R installed successfully&quot;
+    else
+        print_error &quot;R installation failed!&quot;
+        exit 1
+    fi
+    
+    # Update library cache
+    print_status &quot;Updating library cache...&quot;
+    sudo ldconfig
+    
+    # Update PATH for current session
+    export PATH=&quot;/usr/local/bin:$PATH&quot;
+    
+    # Add to user&#39;s bashrc if not already there
+    if ! grep -q &quot;/usr/local/bin&quot; &quot;$HOME/.bashrc&quot;; then
+        print_status &quot;Adding /usr/local/bin to PATH in ~/.bashrc&quot;
+        echo &#39;export PATH=&quot;/usr/local/bin:$PATH&quot;&#39; &gt;&gt; &quot;$HOME/.bashrc&quot;
+    fi
+}
+
+# Function to verify installation
+verify_installation() {
+    print_status &quot;Verifying R installation...&quot;
+    
+    # Check if R binary exists
+    if ! command_exists R; then
+        print_error &quot;R command not found in PATH!&quot;
+        return 1
+    fi
+    
+    # Check R version
+    INSTALLED_VERSION=$(R --version | head -n1 | grep -oE &#39;[0-9]+\.[0-9]+\.[0-9]+&#39;)
+    
+    if [[ &quot;$INSTALLED_VERSION&quot; == &quot;$R_VERSION&quot; ]]; then
+        print_success &quot;R version $INSTALLED_VERSION installed successfully!&quot;
+    else
+        print_error &quot;Version mismatch! Expected: $R_VERSION, Found: $INSTALLED_VERSION&quot;
+        return 1
+    fi
+    
+    # Test basic R functionality
+    print_status &quot;Testing basic R functionality...&quot;
+    
+    if R --slave --no-restore --no-save -e &quot;cat(&#39;R is working correctly!\n&#39;); sessionInfo()&quot; &gt;/dev/null 2&gt;&amp;1; then
+        print_success &quot;R is working correctly!&quot;
+    else
+        print_error &quot;R is installed but not working properly!&quot;
+        return 1
+    fi
+    
+    # Show installation info
+    echo &quot;&quot;
+    print_success &quot;=== R Installation Complete ===&quot;
+    echo &quot;R Version: $INSTALLED_VERSION&quot;
+    echo &quot;R Location: $(which R)&quot;
+    echo &quot;Installation Directory: /usr/local&quot;
+    echo &quot;&quot;
+    echo &quot;To start R, simply type: R&quot;
+    echo &quot;To check R version: R --version&quot;
+    echo &quot;&quot;
+    print_status &quot;Build directory saved at: $WORK_DIR&quot;
+    print_status &quot;You can remove it to save space: rm -rf $WORK_DIR&quot;
+}
+
+# Function to cleanup on error
+cleanup_on_error() {
+    print_error &quot;Installation failed!&quot;
+    print_status &quot;Build directory preserved for debugging: $WORK_DIR&quot;
+    print_status &quot;Check the error messages above for troubleshooting.&quot;
+    exit 1
+}
+
+# Main function
+main() {
+    echo &quot;======================================&quot;
+    echo &quot;    R Compilation and Installation&quot;
+    echo &quot;======================================&quot;
+    echo &quot;&quot;
+    
+    # Set up error handling
+    trap cleanup_on_error ERR
+    
+    # Check if not running as root
+    check_not_root
+    
+    # Get R version from command line
+    get_r_version &quot;$@&quot;
+    
+    # Install dependencies
+    install_dependencies
+    
+    # Download and extract R source
+    download_r_source
+    
+    # Configure R build
+    configure_r
+    
+    # Compile R
+    compile_r
+    
+    # Install R
+    install_r
+    
+    # Verify installation
+    verify_installation
+    
+    print_success &quot;All done! Enjoy your new R installation!&quot;
+}
+
+# Run main function with all arguments
+main &quot;$@&quot;</code></pre><p> </p></div></div><div class="section level2" id="python"><h2>Python</h2><div class="section level3" id="spb_book_spine.py"><h3>spb_book_spine.py</h3><p><strong>Purpose:</strong></p><p>I sometimes print some large pdfs to keep it as paper to refer to it.  I print them on A5 pages and punch spiral holes. since I only actively read one or two books like this I reuse same spiral. But this method has flaw. since I reuse spiral, after I read the book it needs to be held together with something, like a rubber band or a string. Bigger problem is that you can’t tell which book is which when it is on the self. So I made this script to create spine for them. I print on an A4 and fold it so it hugs the book.<br></p><p><strong>Known issues:</strong> it is not convenient to modify it.<br></p><p><strong>Usage:</strong> Just edit and run it!****</p><p><strong>Code:</strong><br></p><pre><code>import qrcode
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm
+
+def create_book_spine(title, author, doi):
+    # Generate QR code for DOI
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(doi)
+    qr.make(fit=True)
+
+    qr_img = qr.make_image(fill_color=&quot;black&quot;, back_color=&quot;white&quot;)
+
+    # Create PDF with specific dimensions
+    c = canvas.Canvas(&quot;book_spine.pdf&quot;, pagesize=(1.5 * cm, 21 * cm))
+    c.setFont(&quot;Helvetica&quot;, 12)
+
+    # Add title and author
+    c.drawString(0.2 * cm, 19 * cm, title)
+    c.drawString(0.2 * cm, 18 * cm, author)
+
+    # Add QR code for DOI at the bottom
+    qr_img_path = &quot;doi_qr.png&quot;
+    qr_img.save(qr_img_path)
+    c.drawImage(qr_img_path, 0.2 * cm, 0.5 * cm, 1.1 * cm, 1.1 * cm)
+
+    c.save()
+
+import qrcode
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm
+
+def create_book_spine(title, author, doi):
+    # Generate QR code for DOI
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=1,
+    )
+    qr.add_data(doi)
+    qr.make(fit=True)
+
+    qr_img = qr.make_image(fill_color=&quot;black&quot;, back_color=&quot;white&quot;)
+
+    # Create PDF with specific dimensions
+    c = canvas.Canvas(&quot;book_spine.pdf&quot;, pagesize=(1.5 * cm, 20 * cm))
+
+    # Rotate the canvas to write vertical text
+    c.rotate(90)
+
+    # Set font to Helvetica-Bold for title
+    c.setFont(&quot;Helvetica-Bold&quot;, 12)
+    c.drawString(2 * cm, -0.8 * cm, title)
+
+    # Set font back to Helvetica for author
+    c.setFont(&quot;Helvetica&quot;, 12)
+    c.drawString(3 * cm, -1.3 * cm, author)
+
+    # Reset rotation for the QR code
+    c.rotate(-90)
+
+    # Add QR code for DOI at the bottom
+    qr_img_path = &quot;doi_qr.png&quot;
+    qr_img.save(qr_img_path)
+    c.drawImage(qr_img_path, 0.2 * cm, 0.5 * cm, 1.1 * cm, 1.1 * cm, mask=&#39;auto&#39;)
+
+    c.save()
+
+create_book_spine(
+    &quot;Books title&quot;,
+    &quot;Author&quot;,
+    &quot;URL&quot;
+)</code></pre><p><br></p></div><div class="section level3" id="doi_bib_converter.py"><h3>doi_bib_converter.py</h3><p><strong>Purpose:</strong></p><p>While drafting manuscripts nowadays, I usually just add the DOI in brackets for references. Every research group seems to have a different preference for reference management, and I find this approach easier—especially when multiple authors are making edits. Once everything is finalized, I properly insert the references. For now, I’m hosting it here: <a href="http://cs1.puntocopy.com/bib-convert/" rel="nofollow" target="_blank">cs1.puntocopy.com/bib-convert/</a></p><p><strong>Known issues:</strong> not that I know of</p><p><strong>Usage:</strong> Just use it<strong>!</strong></p><p><strong>Code:</strong></p><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;
+DOI Bibliography Converter
+A Flask web service to convert DOIs to BibTeX or MS Word XML format
+Production version for Apache2 deployment
+&quot;&quot;&quot;
+
+import re
+import requests
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+from flask import Flask, render_template_string, request, Response, jsonify
+from urllib.parse import quote
+import logging
+import time
+import os
+import json
+from typing import List, Set, Dict, Tuple
+
+# Configure logging for production
+try:
+    logging.basicConfig(
+        level=logging.INFO,
+        format=&#39;%(asctime)s %(levelname)s:%(name)s:%(message)s&#39;,
+        handlers=[
+            logging.FileHandler(&#39;/var/log/apache2/bib-convert.log&#39;),
+            logging.StreamHandler()
+        ]
+    )
+except PermissionError:
+    # Fallback if can&#39;t write to log file
+    logging.basicConfig(
+        level=logging.INFO,
+        format=&#39;%(asctime)s %(levelname)s:%(name)s:%(message)s&#39;
+    )
+
+app = Flask(__name__)
+
+# HTML template for the web interface
+HTML_TEMPLATE = &quot;&quot;&quot;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;DOI Bibliography Converter&lt;/title&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;style&gt;
+        body { 
+            font-family: Helvetica, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container { 
+            background: #f9f9f9; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        textarea { 
+            width: 100%; 
+            height: 200px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-family: monospace;
+            resize: vertical;
+        }
+        .form-group { 
+            margin: 20px 0; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold;
+        }
+        .radio-group { 
+            margin: 10px 0; 
+        }
+        .radio-group label { 
+            display: inline; 
+            margin-left: 8px; 
+            font-weight: normal;
+        }
+        .checkbox-group { 
+            margin: 10px 0; 
+        }
+        .checkbox-group label { 
+            display: inline; 
+            margin-left: 8px; 
+            font-weight: normal;
+        }
+        button { 
+            background: #007cba; 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover { 
+            background: #005a8b; 
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { 
+            color: #d32f2f; 
+            background: #ffebee; 
+            border-color: #d32f2f;
+        }
+        .info { 
+            font-size: 14px; 
+            color: #666; 
+            margin-top: 10px;
+        }
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007cba, #005a8b);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer a {
+            color: #007cba;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .tex-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+            color: #856404;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class=&quot;container&quot;&gt;
+        &lt;h1&gt;DOI Bibliography Converter&lt;/h1&gt;
+        &lt;div class=&quot;info&quot; style=&quot;background: #e3f2fd; padding: 10px; border-radius: 4px; margin-bottom: 20px;&quot;&gt;
+            &lt;strong&gt;How it works:&lt;/strong&gt; Paste text containing DOIs or enter DOIs directly. The service will automatically extract and convert them to your chosen format.
+            &lt;br&gt;&lt;strong&gt;Rate limiting:&lt;/strong&gt; Processing is throttled to respect CrossRef API limits (~10 requests/second).
+        &lt;/div&gt;
+        
+        &lt;form id=&quot;doiForm&quot;&gt;
+            &lt;div class=&quot;form-group&quot;&gt;
+                &lt;label for=&quot;dois&quot;&gt;Enter DOIs or paste text containing DOIs:&lt;/label&gt;
+                &lt;textarea id=&quot;dois&quot; name=&quot;dois&quot; placeholder=&quot;10.1038/nature12373
+10.1126/science.1234567
+10.1016/j.cell.2020.01.001
+
+Or paste any text like:
+Recent studies (doi:10.1038/nature12373) show that...
+See https://doi.org/10.1126/science.1234567 for details...&quot;&gt;&lt;/textarea&gt;
+                &lt;div class=&quot;info&quot;&gt;Enter DOIs one per line, or paste any text - DOIs will be automatically extracted. Supports various formats including URLs and doi: prefixes.&lt;/div&gt;
+            &lt;/div&gt;
+            
+            &lt;div class=&quot;form-group&quot;&gt;
+                &lt;label&gt;Output Format:&lt;/label&gt;
+                &lt;div class=&quot;radio-group&quot;&gt;
+                    &lt;input type=&quot;radio&quot; id=&quot;bibtex&quot; name=&quot;format&quot; value=&quot;bibtex&quot; checked&gt;
+                    &lt;label for=&quot;bibtex&quot;&gt;BibTeX&lt;/label&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;radio-group&quot;&gt;
+                    &lt;input type=&quot;radio&quot; id=&quot;xml&quot; name=&quot;format&quot; value=&quot;xml&quot;&gt;
+                    &lt;label for=&quot;xml&quot;&gt;MS Word XML&lt;/label&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            
+            &lt;div class=&quot;form-group&quot;&gt;
+                &lt;div class=&quot;checkbox-group&quot;&gt;
+                    &lt;input type=&quot;checkbox&quot; id=&quot;autoDownload&quot; name=&quot;autoDownload&quot; checked&gt;
+                    &lt;label for=&quot;autoDownload&quot;&gt;Automatically download result file&lt;/label&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;checkbox-group&quot;&gt;
+                    &lt;input type=&quot;checkbox&quot; id=&quot;forTex&quot; name=&quot;forTex&quot;&gt;
+                    &lt;label for=&quot;forTex&quot;&gt;For TeX (generate TeX file with \\cite{} commands)&lt;/label&gt;
+                    &lt;div class=&quot;tex-info&quot; id=&quot;texInfo&quot; style=&quot;display: none;&quot;&gt;
+                        This will create an additional TeX file where DOIs in your original text are replaced with \\cite{bibkey} commands matching the generated BibTeX entries.
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;checkbox-group&quot;&gt;
+                    &lt;input type=&quot;checkbox&quot; id=&quot;forMarkdown&quot; name=&quot;forMarkdown&quot;&gt;
+                    &lt;label for=&quot;forMarkdown&quot;&gt;For Markdown (generate Markdown file with @bibkey citations)&lt;/label&gt;
+                    &lt;div class=&quot;tex-info&quot; id=&quot;markdownInfo&quot; style=&quot;display: none;&quot;&gt;
+                        This will create an additional Markdown file where DOIs in your original text are replaced with @bibkey citations for use with Pandoc and the generated BibTeX file.
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            
+            &lt;button type=&quot;submit&quot;&gt;Convert DOIs&lt;/button&gt;
+        &lt;/form&gt;
+        
+        &lt;div class=&quot;progress-container&quot; id=&quot;progressContainer&quot;&gt;
+            &lt;div class=&quot;progress-bar&quot;&gt;
+                &lt;div class=&quot;progress-fill&quot; id=&quot;progressFill&quot;&gt;&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;progress-text&quot; id=&quot;progressText&quot;&gt;Processing...&lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div id=&quot;result&quot;&gt;&lt;/div&gt;
+        
+        &lt;div class=&quot;footer&quot;&gt;
+            &lt;p&gt;Script available at: &lt;a href=&quot;https://github.com/NitroxHead/blog_posts/blob/main/Small%20Scripts/doi_bib_converter.py&quot; target=&quot;_blank&quot;&gt;Github&lt;/a&gt;&lt;/p&gt;
+            &lt;p&gt;Created by: NitroxHead&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        // Show/hide TeX info when checkbox is toggled
+        document.getElementById(&#39;forTex&#39;).addEventListener(&#39;change&#39;, function() {
+            const texInfo = document.getElementById(&#39;texInfo&#39;);
+            texInfo.style.display = this.checked ? &#39;block&#39; : &#39;none&#39;;
+        });
+        
+        // Show/hide Markdown info when checkbox is toggled
+        document.getElementById(&#39;forMarkdown&#39;).addEventListener(&#39;change&#39;, function() {
+            const markdownInfo = document.getElementById(&#39;markdownInfo&#39;);
+            markdownInfo.style.display = this.checked ? &#39;block&#39; : &#39;none&#39;;
+        });
+        
+        document.getElementById(&#39;doiForm&#39;).addEventListener(&#39;submit&#39;, async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const resultDiv = document.getElementById(&#39;result&#39;);
+            const submitButton = document.querySelector(&#39;button[type=&quot;submit&quot;]&#39;);
+            const progressContainer = document.getElementById(&#39;progressContainer&#39;);
+            const progressFill = document.getElementById(&#39;progressFill&#39;);
+            const progressText = document.getElementById(&#39;progressText&#39;);
+            const autoDownload = document.getElementById(&#39;autoDownload&#39;).checked;
+            const forTex = document.getElementById(&#39;forTex&#39;).checked;
+            const forMarkdown = document.getElementById(&#39;forMarkdown&#39;).checked;
+            const format = formData.get(&#39;format&#39;);
+            
+            // Count approximate DOIs for progress indication
+            const inputText = formData.get(&#39;dois&#39;);
+            const approxDoiCount = (inputText.match(/10\\.\\d{4,}/g) || []).length;
+            
+            let progressMessage = &#39;Processing...&#39;;
+            if (approxDoiCount &gt; 1) {
+                progressMessage = `Processing ${approxDoiCount} DOIs (estimated ${Math.ceil(approxDoiCount * 0.2)} seconds)...`;
+            }
+            
+            // Show progress bar and start animation
+            progressContainer.style.display = &#39;block&#39;;
+            progressText.textContent = progressMessage;
+            progressFill.style.width = &#39;0%&#39;;
+            
+            // Animate progress bar
+            let progress = 0;
+            const estimatedTime = Math.max(2, approxDoiCount * 0.2) * 1000; // Convert to milliseconds
+            const progressInterval = setInterval(() =&gt; {
+                progress += (100 / (estimatedTime / 100)); // Update every 100ms
+                if (progress &lt; 90) { // Don&#39;t go to 100% until actually done
+                    progressFill.style.width = progress + &#39;%&#39;;
+                }
+            }, 100);
+            
+            resultDiv.innerHTML = &#39;&#39;;
+            submitButton.disabled = true;
+            submitButton.textContent = &#39;Processing...&#39;;
+            
+            try {
+                const response = await fetch(&#39;convert&#39;, {
+                    method: &#39;POST&#39;,
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressFill.style.width = &#39;100%&#39;;
+                progressText.textContent = &#39;Complete!&#39;;
+                
+                if (response.ok) {
+                    const contentType = response.headers.get(&#39;content-type&#39;);
+                    
+                    if (contentType.includes(&#39;application/json&#39;)) {
+                        // Multi-file response (when TeX or Markdown is enabled)
+                        const result = await response.json();
+                        
+                        // Display the main result
+                        resultDiv.innerHTML = &#39;&lt;div class=&quot;result&quot;&gt;&#39; + escapeHtml(result.main_content) + &#39;&lt;/div&gt;&#39;;
+                        
+                        // Auto-download if enabled
+                        if (autoDownload) {
+                            downloadFile(result.main_content, format);
+                            
+                            // Also download TeX file if available
+                            if (result.tex_content) {
+                                downloadFile(result.tex_content, &#39;tex&#39;);
+                            }
+                            
+                            // Also download Markdown file if available
+                            if (result.markdown_content) {
+                                downloadFile(result.markdown_content, &#39;markdown&#39;);
+                            }
+                        }
+                    } else {
+                        // Single file response
+                        const result = await response.text();
+                        resultDiv.innerHTML = &#39;&lt;div class=&quot;result&quot;&gt;&#39; + escapeHtml(result) + &#39;&lt;/div&gt;&#39;;
+                        
+                        // Auto-download if enabled
+                        if (autoDownload) {
+                            downloadFile(result, format);
+                        }
+                    }
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = &#39;&lt;div class=&quot;result error&quot;&gt;Error: &#39; + escapeHtml(error) + &#39;&lt;/div&gt;&#39;;
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
+                resultDiv.innerHTML = &#39;&lt;div class=&quot;result error&quot;&gt;Network error: &#39; + escapeHtml(error.message) + &#39;&lt;/div&gt;&#39;;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = &#39;Convert DOIs&#39;;
+                
+                // Hide progress bar after 2 seconds
+                setTimeout(() =&gt; {
+                    progressContainer.style.display = &#39;none&#39;;
+                }, 2000);
+            }
+        });
+        
+        function downloadFile(content, format) {
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, &#39;-&#39;);
+            let extension, mimeType, prefix;
+            
+            switch(format) {
+                case &#39;xml&#39;:
+                    extension = &#39;xml&#39;;
+                    mimeType = &#39;application/xml&#39;;
+                    prefix = &#39;doi-bibliography&#39;;
+                    break;
+                case &#39;tex&#39;:
+                    extension = &#39;tex&#39;;
+                    mimeType = &#39;text/plain&#39;;
+                    prefix = &#39;doi-text-with-citations&#39;;
+                    break;
+                case &#39;markdown&#39;:
+                    extension = &#39;md&#39;;
+                    mimeType = &#39;text/markdown&#39;;
+                    prefix = &#39;doi-text-with-citations&#39;;
+                    break;
+                default: // bibtex
+                    extension = &#39;bib&#39;;
+                    mimeType = &#39;text/plain&#39;;
+                    prefix = &#39;doi-bibliography&#39;;
+                    break;
+            }
+            
+            const filename = `${prefix}-${timestamp}.${extension}`;
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement(&#39;a&#39;);
+            a.style.display = &#39;none&#39;;
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+        
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&amp;/g, &quot;&amp;amp;&quot;)
+                .replace(/&lt;/g, &quot;&amp;lt;&quot;)
+                .replace(/&gt;/g, &quot;&amp;gt;&quot;)
+                .replace(/&quot;/g, &quot;&amp;quot;&quot;)
+                .replace(/&#39;/g, &quot;&amp;#039;&quot;);
+        }
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&quot;&quot;&quot;
+
+# Rate limiting
+last_request_time = 0
+MIN_REQUEST_INTERVAL = 0.1  # 100ms between requests (10 requests/second to be polite)
+
+def clean_doi(doi_string):
+    &quot;&quot;&quot;Extract clean DOI from various input formats&quot;&quot;&quot;
+    # Remove whitespace
+    doi_string = doi_string.strip()
+    
+    # Extract DOI from URL if present
+    if &#39;doi.org/&#39; in doi_string:
+        doi_string = doi_string.split(&#39;doi.org/&#39;)[-1]
+    
+    # Remove &#39;doi:&#39; prefix if present
+    if doi_string.lower().startswith(&#39;doi:&#39;):
+        doi_string = doi_string[4:]
+    
+    # Remove trailing punctuation that might be from sentence context
+    while doi_string and doi_string[-1] in &#39;.,;:)]}&#39;:
+        doi_string = doi_string[:-1]
+    
+    return doi_string
+
+def extract_dois_from_text(text: str) -&gt; List[Tuple[str, int, int]]:
+    &quot;&quot;&quot;Extract all DOIs from text using regex patterns, returning DOI, start, end positions&quot;&quot;&quot;
+    doi_patterns = [
+        # Standard DOI pattern - more permissive, stops at whitespace, brackets, or end of sentence
+        r&#39;10\.\d{4,}\/[^\s\(\)\[\]\,\;]+&#39;,
+        # DOI with doi: prefix
+        r&#39;doi:\s*10\.\d{4,}\/[^\s\(\)\[\]\,\;]+&#39;,
+        # DOI URLs
+        r&#39;https?:\/\/(?:dx\.)?doi\.org\/10\.\d{4,}\/[^\s\(\)\[\]\,\;]+&#39;,
+        # DOI URLs without protocol
+        r&#39;(?:dx\.)?doi\.org\/10\.\d{4,}\/[^\s\(\)\[\]\,\;]+&#39;
+    ]
+    
+    found_dois = []
+    
+    app.logger.info(f&quot;Extracting DOIs from text: {text[:200]}...&quot;)
+    
+    for i, pattern in enumerate(doi_patterns):
+        matches = re.finditer(pattern, text, re.IGNORECASE)
+        for match in matches:
+            raw_doi = match.group()
+            start_pos = match.start()
+            end_pos = match.end()
+            
+            app.logger.info(f&quot;Pattern {i+1} found raw match: &#39;{raw_doi}&#39; at {start_pos}-{end_pos}&quot;)
+            
+            # Clean the DOI
+            cleaned_doi = clean_doi(raw_doi)
+            app.logger.info(f&quot;Cleaned to: &#39;{cleaned_doi}&#39;&quot;)
+            
+            # Validate that it&#39;s actually a DOI (has the right structure)
+            if re.match(r&#39;^10\.\d{4,}\/[a-zA-Z0-9\.\-_\(\)\/]+$&#39;, cleaned_doi):
+                found_dois.append((cleaned_doi, start_pos, end_pos))
+                app.logger.info(f&quot;Added valid DOI: &#39;{cleaned_doi}&#39; at {start_pos}-{end_pos}&quot;)
+            else:
+                app.logger.warning(f&quot;Rejected invalid DOI format: &#39;{cleaned_doi}&#39;&quot;)
+    
+    # Sort by start position to maintain order
+    found_dois.sort(key=lambda x: x[1])
+    
+    app.logger.info(f&quot;Final extracted DOIs with positions: {found_dois}&quot;)
+    return found_dois
+
+def parse_input_text(input_text: str) -&gt; List[str]:
+    &quot;&quot;&quot;Parse input text to extract DOIs, handling both line-by-line DOIs and full text&quot;&quot;&quot;
+    input_text = input_text.strip()
+    
+    if not input_text:
+        return []
+    
+    app.logger.info(f&quot;Parsing input text of length {len(input_text)}&quot;)
+    
+    # First, try to extract DOIs from the entire text
+    extracted_dois_with_pos = extract_dois_from_text(input_text)
+    extracted_dois = [doi for doi, _, _ in extracted_dois_with_pos]
+    app.logger.info(f&quot;Extracted DOIs from full text: {extracted_dois}&quot;)
+    
+    # Also check if input looks like line-by-line DOIs
+    lines = [line.strip() for line in input_text.split(&#39;\n&#39;) if line.strip()]
+    line_dois = set()
+    
+    app.logger.info(f&quot;Processing {len(lines)} lines for line-by-line DOIs&quot;)
+    
+    for line in lines:
+        # If line looks like it might be a DOI (contains the typical pattern)
+        if re.search(r&#39;10\.\d{4,}&#39;, line):
+            clean_doi_str = clean_doi(line)
+            app.logger.info(f&quot;Line &#39;{line[:50]}...&#39; -&gt; cleaned: &#39;{clean_doi_str}&#39;&quot;)
+            if clean_doi_str and re.match(r&#39;^10\.\d{4,}\/[a-zA-Z0-9\.\-_\(\)\/]+$&#39;, clean_doi_str):
+                line_dois.add(clean_doi_str)
+                app.logger.info(f&quot;Added line DOI: &#39;{clean_doi_str}&#39;&quot;)
+    
+    # Combine both methods, preferring extracted DOIs if we found any
+    all_dois_set = set(extracted_dois).union(line_dois) if extracted_dois else line_dois
+    
+    # Preserve order from extracted DOIs, then add any additional from line parsing
+    result = []
+    for doi in extracted_dois:
+        if doi not in result:
+            result.append(doi)
+    
+    for doi in line_dois:
+        if doi not in result:
+            result.append(doi)
+    
+    app.logger.info(f&quot;Final combined DOIs: {result}&quot;)
+    return result
+
+def fetch_doi_metadata(doi):
+    &quot;&quot;&quot;Fetch metadata for a DOI from CrossRef with rate limiting&quot;&quot;&quot;
+    global last_request_time
+    
+    try:
+        # Rate limiting - ensure we don&#39;t exceed CrossRef&#39;s limits
+        current_time = time.time()
+        time_since_last = current_time - last_request_time
+        if time_since_last &lt; MIN_REQUEST_INTERVAL:
+            time.sleep(MIN_REQUEST_INTERVAL - time_since_last)
+        
+        clean_doi_str = clean_doi(doi)
+        url = f&quot;https://api.crossref.org/works/{quote(clean_doi_str)}&quot;
+        
+        headers = {
+            &#39;User-Agent&#39;: &#39;DOI-Bibliography-Converter/1.0 (mailto:user@example.com)&#39;,
+            &#39;Accept&#39;: &#39;application/json&#39;
+        }
+        
+        last_request_time = time.time()
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        return data[&#39;message&#39;]
+    
+    except Exception as e:
+        app.logger.error(f&quot;Error fetching DOI {doi}: {str(e)}&quot;)
+        return None
+
+def format_authors_bibtex(authors):
+    &quot;&quot;&quot;Format authors for BibTeX&quot;&quot;&quot;
+    if not authors:
+        return &quot;&quot;
+    
+    author_list = []
+    for author in authors:
+        if &#39;family&#39; in author and &#39;given&#39; in author:
+            author_list.append(f&quot;{author[&#39;family&#39;]}, {author[&#39;given&#39;]}&quot;)
+        elif &#39;family&#39; in author:
+            author_list.append(author[&#39;family&#39;])
+    
+    return &quot; and &quot;.join(author_list)
+
+def format_authors_xml(authors):
+    &quot;&quot;&quot;Format authors for XML&quot;&quot;&quot;
+    if not authors:
+        return &quot;&quot;
+    
+    author_list = []
+    for author in authors:
+        if &#39;family&#39; in author and &#39;given&#39; in author:
+            author_list.append(f&quot;{author[&#39;given&#39;]} {author[&#39;family&#39;]}&quot;)
+        elif &#39;family&#39; in author:
+            author_list.append(author[&#39;family&#39;])
+    
+    return &quot;; &quot;.join(author_list)
+
+def generate_bibtex_key(metadata):
+    &quot;&quot;&quot;Generate a BibTeX key from metadata&quot;&quot;&quot;
+    # Use first author&#39;s last name + year
+    authors = metadata.get(&#39;author&#39;, [])
+    year = &quot;&quot;
+    
+    if &#39;created&#39; in metadata:
+        year = str(metadata[&#39;created&#39;][&#39;date-parts&#39;][0][0])
+    elif &#39;published-print&#39; in metadata:
+        year = str(metadata[&#39;published-print&#39;][&#39;date-parts&#39;][0][0])
+    elif &#39;published-online&#39; in metadata:
+        year = str(metadata[&#39;published-online&#39;][&#39;date-parts&#39;][0][0])
+    
+    if authors and &#39;family&#39; in authors[0]:
+        first_author = authors[0][&#39;family&#39;].replace(&#39; &#39;, &#39;&#39;).replace(&#39;-&#39;, &#39;&#39;)
+        key = f&quot;{first_author}{year}&quot;
+    else:
+        key = f&quot;unknown{year}&quot;
+    
+    return key
+
+def metadata_to_bibtex(metadata):
+    &quot;&quot;&quot;Convert CrossRef metadata to BibTeX format&quot;&quot;&quot;
+    entry_type = &quot;article&quot;  # Default to article
+    
+    # Determine entry type based on publication type
+    pub_type = metadata.get(&#39;type&#39;, &#39;&#39;).lower()
+    if &#39;book&#39; in pub_type:
+        entry_type = &quot;book&quot;
+    elif &#39;conference&#39; in pub_type or &#39;proceedings&#39; in pub_type:
+        entry_type = &quot;inproceedings&quot;
+    
+    key = generate_bibtex_key(metadata)
+    
+    bibtex = f&quot;@{entry_type}{{{key},\n&quot;
+    
+    # Title
+    if &#39;title&#39; in metadata and metadata[&#39;title&#39;]:
+        title = metadata[&#39;title&#39;][0].replace(&#39;{&#39;, &#39;&#39;).replace(&#39;}&#39;, &#39;&#39;)
+        bibtex += f&quot;  title = {{{title}}},\n&quot;
+    
+    # Authors
+    if &#39;author&#39; in metadata:
+        authors = format_authors_bibtex(metadata[&#39;author&#39;])
+        if authors:
+            bibtex += f&quot;  author = {{{authors}}},\n&quot;
+    
+    # Journal
+    if &#39;container-title&#39; in metadata and metadata[&#39;container-title&#39;]:
+        journal = metadata[&#39;container-title&#39;][0]
+        bibtex += f&quot;  journal = {{{journal}}},\n&quot;
+    
+    # Year
+    year = &quot;&quot;
+    if &#39;created&#39; in metadata:
+        year = str(metadata[&#39;created&#39;][&#39;date-parts&#39;][0][0])
+    elif &#39;published-print&#39; in metadata:
+        year = str(metadata[&#39;published-print&#39;][&#39;date-parts&#39;][0][0])
+    elif &#39;published-online&#39; in metadata:
+        year = str(metadata[&#39;published-online&#39;][&#39;date-parts&#39;][0][0])
+    
+    if year:
+        bibtex += f&quot;  year = {{{year}}},\n&quot;
+    
+    # Volume
+    if &#39;volume&#39; in metadata:
+        bibtex += f&quot;  volume = {{{metadata[&#39;volume&#39;]}}},\n&quot;
+    
+    # Issue/Number
+    if &#39;issue&#39; in metadata:
+        bibtex += f&quot;  number = {{{metadata[&#39;issue&#39;]}}},\n&quot;
+    
+    # Pages
+    if &#39;page&#39; in metadata:
+        bibtex += f&quot;  pages = {{{metadata[&#39;page&#39;]}}},\n&quot;
+    
+    # DOI
+    if &#39;DOI&#39; in metadata:
+        bibtex += f&quot;  doi = {{{metadata[&#39;DOI&#39;]}}},\n&quot;
+    
+    # URL
+    if &#39;URL&#39; in metadata:
+        bibtex += f&quot;  url = {{{metadata[&#39;URL&#39;]}}},\n&quot;
+    
+    bibtex += &quot;}\n&quot;
+    
+    return bibtex, key
+
+def metadata_to_msword_xml(metadata_list):
+    &quot;&quot;&quot;Convert list of CrossRef metadata to MS Word XML bibliography format&quot;&quot;&quot;
+    # Create root element
+    root = ET.Element(&quot;b:Sources&quot;)
+    root.set(&quot;SelectedStyle&quot;, &quot;\\APASixthEditionOfficeOnline.xsl&quot;)
+    root.set(&quot;StyleName&quot;, &quot;APA&quot;)
+    root.set(&quot;xmlns:b&quot;, &quot;http://schemas.openxmlformats.org/officeDocument/2006/bibliography&quot;)
+    root.set(&quot;xmlns&quot;, &quot;http://schemas.openxmlformats.org/officeDocument/2006/bibliography&quot;)
+    
+    for i, metadata in enumerate(metadata_list):
+        source = ET.SubElement(root, &quot;b:Source&quot;)
+        
+        # Tag (unique identifier)
+        tag = ET.SubElement(source, &quot;b:Tag&quot;)
+        tag.text = f&quot;Source{i+1}&quot;
+        
+        # Source type (most will be journal articles)
+        source_type = ET.SubElement(source, &quot;b:SourceType&quot;)
+        source_type.text = &quot;ArticleInAPeriodical&quot;
+        
+        # Title
+        if &#39;title&#39; in metadata and metadata[&#39;title&#39;]:
+            title = ET.SubElement(source, &quot;b:Title&quot;)
+            title.text = metadata[&#39;title&#39;][0]
+        
+        # Authors
+        if &#39;author&#39; in metadata and metadata[&#39;author&#39;]:
+            authors_elem = ET.SubElement(source, &quot;b:Author&quot;)
+            name_list = ET.SubElement(authors_elem, &quot;b:NameList&quot;)
+            
+            for author in metadata[&#39;author&#39;][:10]:  # Limit to first 10 authors
+                person = ET.SubElement(name_list, &quot;b:Person&quot;)
+                
+                if &#39;given&#39; in author:
+                    first = ET.SubElement(person, &quot;b:First&quot;)
+                    first.text = author[&#39;given&#39;]
+                
+                if &#39;family&#39; in author:
+                    last = ET.SubElement(person, &quot;b:Last&quot;)
+                    last.text = author[&#39;family&#39;]
+        
+        # Journal name
+        if &#39;container-title&#39; in metadata and metadata[&#39;container-title&#39;]:
+            journal = ET.SubElement(source, &quot;b:JournalName&quot;)
+            journal.text = metadata[&#39;container-title&#39;][0]
+        
+        # Year
+        year = &quot;&quot;
+        if &#39;created&#39; in metadata:
+            year = str(metadata[&#39;created&#39;][&#39;date-parts&#39;][0][0])
+        elif &#39;published-print&#39; in metadata:
+            year = str(metadata[&#39;published-print&#39;][&#39;date-parts&#39;][0][0])
+        elif &#39;published-online&#39; in metadata:
+            year = str(metadata[&#39;published-online&#39;][&#39;date-parts&#39;][0][0])
+        
+        if year:
+            year_elem = ET.SubElement(source, &quot;b:Year&quot;)
+            year_elem.text = year
+        
+        # Volume
+        if &#39;volume&#39; in metadata:
+            volume = ET.SubElement(source, &quot;b:Volume&quot;)
+            volume.text = metadata[&#39;volume&#39;]
+        
+        # Issue
+        if &#39;issue&#39; in metadata:
+            issue = ET.SubElement(source, &quot;b:Issue&quot;)
+            issue.text = metadata[&#39;issue&#39;]
+        
+        # Pages
+        if &#39;page&#39; in metadata:
+            pages = ET.SubElement(source, &quot;b:Pages&quot;)
+            pages.text = metadata[&#39;page&#39;]
+        
+        # DOI
+        if &#39;DOI&#39; in metadata:
+            doi = ET.SubElement(source, &quot;b:DOI&quot;)
+            doi.text = metadata[&#39;DOI&#39;]
+    
+    # Convert to pretty-printed XML string
+    xml_str = ET.tostring(root, encoding=&#39;unicode&#39;)
+    dom = minidom.parseString(xml_str)
+    return dom.toprettyxml(indent=&quot;  &quot;)
+
+def create_tex_file_with_citations(original_text: str, doi_to_key_mapping: Dict[str, str]) -&gt; str:
+    &quot;&quot;&quot;Replace DOIs in original text with TeX citation commands&quot;&quot;&quot;
+    
+    # Get all DOIs with their positions
+    dois_with_positions = extract_dois_from_text(original_text)
+    
+    # Sort by position in reverse order to replace from end to beginning
+    # This prevents position shifts from affecting subsequent replacements
+    dois_with_positions.sort(key=lambda x: x[1], reverse=True)
+    
+    result_text = original_text
+    
+    for doi, start_pos, end_pos in dois_with_positions:
+        clean_doi_str = clean_doi(doi)
+        
+        if clean_doi_str in doi_to_key_mapping:
+            bibtex_key = doi_to_key_mapping[clean_doi_str]
+            citation_command = f&quot;\\cite{{{bibtex_key}}}&quot;
+            
+            # Replace the DOI with the citation command
+            result_text = result_text[:start_pos] + citation_command + result_text[end_pos:]
+            
+            app.logger.info(f&quot;Replaced DOI &#39;{doi}&#39; at {start_pos}-{end_pos} with &#39;{citation_command}&#39;&quot;)
+    
+    return result_text
+
+def create_markdown_file_with_citations(original_text: str, doi_to_key_mapping: Dict[str, str]) -&gt; str:
+    &quot;&quot;&quot;Replace DOIs in original text with Markdown citation commands for Pandoc&quot;&quot;&quot;
+    
+    # Get all DOIs with their positions
+    dois_with_positions = extract_dois_from_text(original_text)
+    
+    # Sort by position in reverse order to replace from end to beginning
+    # This prevents position shifts from affecting subsequent replacements
+    dois_with_positions.sort(key=lambda x: x[1], reverse=True)
+    
+    result_text = original_text
+    
+    for doi, start_pos, end_pos in dois_with_positions:
+        clean_doi_str = clean_doi(doi)
+        
+        if clean_doi_str in doi_to_key_mapping:
+            bibtex_key = doi_to_key_mapping[clean_doi_str]
+            citation_command = f&quot;@{bibtex_key}&quot;
+            
+            # Replace the DOI with the citation command
+            result_text = result_text[:start_pos] + citation_command + result_text[end_pos:]
+            
+            app.logger.info(f&quot;Replaced DOI &#39;{doi}&#39; at {start_pos}-{end_pos} with &#39;{citation_command}&#39;&quot;)
+    
+    return result_text
+
+@app.route(&#39;/&#39;)
+def index():
+    &quot;&quot;&quot;Serve the main page&quot;&quot;&quot;
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route(&#39;/convert&#39;, methods=[&#39;POST&#39;])
+def convert_dois():
+    &quot;&quot;&quot;Convert DOIs to requested format&quot;&quot;&quot;
+    try:
+        input_text = request.form.get(&#39;dois&#39;, &#39;&#39;).strip()
+        output_format = request.form.get(&#39;format&#39;, &#39;bibtex&#39;)
+        for_tex = request.form.get(&#39;forTex&#39;) == &#39;on&#39;
+        for_markdown = request.form.get(&#39;forMarkdown&#39;) == &#39;on&#39;
+        
+        if not input_text:
+            return &quot;Please enter some text or DOIs&quot;, 400
+        
+        # Parse input text to extract DOIs
+        dois = parse_input_text(input_text)
+        
+        if not dois:
+            return &quot;No valid DOIs found in the input text&quot;, 400
+        
+        # Remove duplicates while preserving order
+        unique_dois = list(dict.fromkeys(dois))
+        
+        app.logger.info(f&quot;Found {len(unique_dois)} unique DOIs: {unique_dois}&quot;)
+        
+        # Fetch metadata for all DOIs
+        metadata_list = []
+        failed_dois = []
+        doi_to_key_mapping = {}  # For TeX citation mapping
+        
+        for i, doi in enumerate(unique_dois):
+            app.logger.info(f&quot;Processing DOI {i+1}/{len(unique_dois)}: {doi}&quot;)
+            metadata = fetch_doi_metadata(doi)
+            if metadata:
+                metadata_list.append(metadata)
+                # Store the mapping from DOI to BibTeX key for TeX generation
+                if output_format == &#39;bibtex&#39;:
+                    _, bibtex_key = metadata_to_bibtex(metadata)
+                    doi_to_key_mapping[doi] = bibtex_key
+            else:
+                failed_dois.append(doi)
+        
+        if not metadata_list:
+            return f&quot;Failed to fetch metadata for all DOIs: {&#39;, &#39;.join(failed_dois)}&quot;, 400
+        
+        # Generate output based on format
+        if output_format == &#39;bibtex&#39;:
+            result = f&quot;% Generated {len(metadata_list)} BibTeX entries from {len(unique_dois)} DOIs\n\n&quot;
+            for metadata in metadata_list:
+                bibtex_entry, _ = metadata_to_bibtex(metadata)
+                result += bibtex_entry + &quot;\n&quot;
+            
+            if failed_dois:
+                result += f&quot;\n% Failed to process: {&#39;, &#39;.join(failed_dois)}\n&quot;
+            
+            # Generate TeX and/or Markdown files if requested
+            if for_tex or for_markdown:
+                response_data = {
+                    &#39;main_content&#39;: result
+                }
+                
+                if for_tex:
+                    tex_content = create_tex_file_with_citations(input_text, doi_to_key_mapping)
+                    response_data[&#39;tex_content&#39;] = tex_content
+                
+                if for_markdown:
+                    markdown_content = create_markdown_file_with_citations(input_text, doi_to_key_mapping)
+                    response_data[&#39;markdown_content&#39;] = markdown_content
+                
+                # Return all files as JSON
+                return Response(json.dumps(response_data), mimetype=&#39;application/json&#39;)
+            else:
+                return Response(result, mimetype=&#39;text/plain&#39;)
+        
+        elif output_format == &#39;xml&#39;:
+            result = metadata_to_msword_xml(metadata_list)
+            
+            if failed_dois:
+                result += f&quot;\n&lt;!-- Generated {len(metadata_list)} entries from {len(unique_dois)} DOIs --&gt;\n&quot;
+                result += f&quot;&lt;!-- Failed to process: {&#39;, &#39;.join(failed_dois)} --&gt;\n&quot;
+            
+            # Note: TeX/Markdown generation doesn&#39;t make sense for XML format
+            return Response(result, mimetype=&#39;application/xml&#39;)
+        
+        else:
+            return &quot;Invalid output format&quot;, 400
+    
+    except Exception as e:
+        app.logger.error(f&quot;Error in convert_dois: {str(e)}&quot;)
+        return f&quot;Server error: {str(e)}&quot;, 500
+
+# Production configuration
+if __name__ == &quot;__main__&quot;:
+    # This section won&#39;t be used in WSGI deployment
+    app.run(host=&#39;0.0.0.0&#39;, port=5000, debug=False)</code></pre><p><strong> </strong></p></div><div class="section level3" id="biorxiv_new_pub_discord_notif.py"><h3>bioRxiv_new_pub_discord_notif.py</h3><p><strong>Purpose:</strong></p><p>To get Discord notifications when a new article is published on bioRxiv.</p><p><strong>Known issues:</strong> not that I know of</p><p><strong>Usage:</strong> Just use it<strong>!</strong></p><p><strong>Code:</strong></p><p><strong> </strong></p><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;
+RSS Feed Monitor with Discord Notifications
+
+This script monitors RSS feeds for new publications and sends notifications
+to Discord when new items are found. Designed to run via crontab.
+
+Requirements:
+    pip install feedparser requests
+
+Setup:
+    1. Configure feeds and Discord webhook in the script
+    2. Make executable: chmod +x rss_monitor.py
+    3. Add to crontab: */15 * * * * /path/to/rss_monitor.py
+
+&quot;&quot;&quot;
+
+import feedparser
+import requests
+import json
+import os
+import sys
+import logging
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import urlparse
+import hashlib
+
+# Configuration
+CONFIG = {
+    # Discord webhook URL - replace with your actual webhook URL
+    &#39;discord_webhook&#39;: &#39;https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE&#39;,
+    
+    # RSS feeds to monitor
+    &#39;feeds&#39;: [
+        {
+            &#39;name&#39;: &#39;bioRxiv Ecology&#39;,
+            &#39;url&#39;: &#39;https://connect.biorxiv.org/biorxiv_xml.php?subject=ecology&#39;,
+            &#39;color&#39;: 0x00ff00  # Green color for Discord embed
+        },
+        {
+            &#39;name&#39;: &#39;bioRxiv Systems Biology&#39;,
+            &#39;url&#39;: &#39;https://connect.biorxiv.org/biorxiv_xml.php?subject=systems_biology&#39;,
+            &#39;color&#39;: 0x00ff00  # Green color for Discord embed
+        },
+    ],
+    
+    # Directory to store state files
+    &#39;data_dir&#39;: os.path.expanduser(&#39;~/.rss_monitor&#39;),
+    
+    # Logging configuration
+    &#39;log_file&#39;: os.path.expanduser(&#39;~/.rss_monitor/monitor.log&#39;),
+    &#39;log_level&#39;: logging.DEBUG  # Change to logging.INFO after initial testing
+}
+
+class RSSMonitor:
+    def __init__(self, config):
+        self.config = config
+        self.data_dir = Path(config[&#39;data_dir&#39;])
+        self.data_dir.mkdir(exist_ok=True)
+        
+        # Setup logging
+        logging.basicConfig(
+            level=config[&#39;log_level&#39;],
+            format=&#39;%(asctime)s - %(levelname)s - %(message)s&#39;,
+            handlers=[
+                logging.FileHandler(config[&#39;log_file&#39;]),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger(__name__)
+    
+    def get_state_file(self, feed_name):
+        &quot;&quot;&quot;Get the state file path for a specific feed&quot;&quot;&quot;
+        safe_name = &quot;&quot;.join(c for c in feed_name if c.isalnum() or c in (&#39; &#39;, &#39;-&#39;, &#39;_&#39;)).rstrip()
+        safe_name = safe_name.replace(&#39; &#39;, &#39;_&#39;).lower()
+        return self.data_dir / f&quot;{safe_name}_state.json&quot;
+    
+    def load_seen_items(self, feed_name):
+        &quot;&quot;&quot;Load previously seen items for a feed&quot;&quot;&quot;
+        state_file = self.get_state_file(feed_name)
+        if state_file.exists():
+            try:
+                with open(state_file, &#39;r&#39;) as f:
+                    data = json.load(f)
+                    return set(data.get(&#39;seen_items&#39;, []))
+            except (json.JSONDecodeError, IOError) as e:
+                self.logger.warning(f&quot;Error loading state for {feed_name}: {e}&quot;)
+                return set()
+        return set()
+    
+    def save_seen_items(self, feed_name, seen_items):
+        &quot;&quot;&quot;Save seen items for a feed&quot;&quot;&quot;
+        state_file = self.get_state_file(feed_name)
+        try:
+            data = {
+                &#39;seen_items&#39;: list(seen_items),
+                &#39;last_updated&#39;: datetime.now().isoformat()
+            }
+            with open(state_file, &#39;w&#39;) as f:
+                json.dump(data, f, indent=2)
+        except IOError as e:
+            self.logger.error(f&quot;Error saving state for {feed_name}: {e}&quot;)
+    
+    def generate_item_id(self, entry):
+        &quot;&quot;&quot;Generate a unique ID for a feed entry&quot;&quot;&quot;
+        # Use DOI if available, otherwise use link, otherwise use title+date
+        if hasattr(entry, &#39;id&#39;) and entry.id:
+            return entry.id
+        elif hasattr(entry, &#39;link&#39;) and entry.link:
+            return entry.link
+        else:
+            # Fallback: hash of title and published date
+            content = f&quot;{entry.get(&#39;title&#39;, &#39;&#39;)}{entry.get(&#39;published&#39;, &#39;&#39;)}&quot;
+            return hashlib.md5(content.encode()).hexdigest()
+    
+    def extract_doi_url(self, entry):
+        &quot;&quot;&quot;Extract DOI URL from entry&quot;&quot;&quot;
+        # Try dc_identifier field first (common in bioRxiv feeds)
+        if hasattr(entry, &#39;dc_identifier&#39;) and entry.dc_identifier:
+            identifier = entry.dc_identifier
+            if &#39;doi:&#39; in identifier:
+                doi = identifier.replace(&#39;doi:&#39;, &#39;&#39;).strip()
+                return f&quot;https://doi.org/{doi}&quot;
+        
+        # Try to get DOI from id field
+        if hasattr(entry, &#39;id&#39;) and &#39;doi:&#39; in str(entry.id):
+            doi = str(entry.id).replace(&#39;doi:&#39;, &#39;&#39;).strip()
+            return f&quot;https://doi.org/{doi}&quot;
+        
+        # Try to extract from description or other fields
+        for field in [&#39;link&#39;, &#39;id&#39;, &#39;identifier&#39;]:
+            if hasattr(entry, field):
+                value = getattr(entry, field)
+                if value and &#39;doi.org&#39; in str(value):
+                    return str(value)
+                elif value and &#39;doi:&#39; in str(value):
+                    doi = str(value).split(&#39;doi:&#39;)[1].strip()
+                    return f&quot;https://doi.org/{doi}&quot;
+        
+        # Fallback to the entry link
+        return getattr(entry, &#39;link&#39;, &#39;&#39;)
+    
+    def clean_description(self, description, max_length=1000):
+        &quot;&quot;&quot;Clean and truncate description for Discord&quot;&quot;&quot;
+        if not description:
+            return &quot;No description available&quot;
+        
+        # Remove HTML tags and extra whitespace
+        import re
+        description = re.sub(r&#39;&lt;[^&gt;]+&gt;&#39;, &#39;&#39;, description)
+        description = re.sub(r&#39;\s+&#39;, &#39; &#39;, description).strip()
+        
+        if len(description) &gt; max_length:
+            description = description[:max_length-3] + &quot;...&quot;
+        
+        return description
+    
+    def extract_authors(self, entry):
+        &quot;&quot;&quot;Extract authors from entry with multiple fallback methods&quot;&quot;&quot;
+        # Try various author field names
+        for field in [&#39;dc_creator&#39;, &#39;author&#39;, &#39;authors&#39;, &#39;creator&#39;]:
+            if hasattr(entry, field):
+                authors = getattr(entry, field)
+                if authors and authors.strip():
+                    return authors.strip()
+        
+        # Try accessing through tags
+        if hasattr(entry, &#39;tags&#39;):
+            for tag in entry.tags:
+                if tag.get(&#39;term&#39;) and &#39;creator&#39; in tag.get(&#39;rel&#39;, &#39;&#39;).lower():
+                    return tag[&#39;term&#39;]
+        
+        return &quot;Unknown authors&quot;
+    
+    def extract_publish_date(self, entry):
+        &quot;&quot;&quot;Extract publication date with multiple fallback methods&quot;&quot;&quot;
+        # Try various date field names
+        for field in [&#39;dc_date&#39;, &#39;published&#39;, &#39;pubdate&#39;, &#39;prism_publicationdate&#39;]:
+            if hasattr(entry, field):
+                date_val = getattr(entry, field)
+                if date_val:
+                    return str(date_val)
+        
+        # Try accessing through other properties
+        if hasattr(entry, &#39;published_parsed&#39;) and entry.published_parsed:
+            from time import strftime
+            return strftime(&#39;%Y-%m-%d&#39;, entry.published_parsed)
+        
+        return &quot;Unknown date&quot;
+
+    def send_discord_notification(self, feed_name, entries, feed_color):
+        &quot;&quot;&quot;Send Discord notification for new entries&quot;&quot;&quot;
+        if not entries:
+            return
+        
+        webhook_url = self.config[&#39;discord_webhook&#39;]
+        if not webhook_url or &#39;YOUR_WEBHOOK_URL_HERE&#39; in webhook_url:
+            self.logger.error(&quot;Discord webhook URL not configured&quot;)
+            return
+        
+        for entry in entries:
+            title = entry.get(&#39;title&#39;, &#39;Untitled&#39;)
+            description = self.clean_description(entry.get(&#39;description&#39;, &#39;&#39;))
+            doi_url = self.extract_doi_url(entry)
+            published = self.extract_publish_date(entry)
+            authors = self.extract_authors(entry)
+            
+            # Create Discord embed
+            embed = {
+                &quot;title&quot;: title[:256],  # Discord title limit
+                &quot;description&quot;: description,
+                &quot;url&quot;: doi_url,
+                &quot;color&quot;: feed_color,
+                &quot;fields&quot;: [
+                    {
+                        &quot;name&quot;: &quot;Authors&quot;,
+                        &quot;value&quot;: authors[:1024] if authors else &quot;Unknown&quot;,
+                        &quot;inline&quot;: False
+                    },
+                    {
+                        &quot;name&quot;: &quot;Published&quot;,
+                        &quot;value&quot;: published,
+                        &quot;inline&quot;: True
+                    },
+                    {
+                        &quot;name&quot;: &quot;Source&quot;,
+                        &quot;value&quot;: feed_name,
+                        &quot;inline&quot;: True
+                    }
+                ],
+                &quot;footer&quot;: {
+                    &quot;text&quot;: &quot;RSS Monitor&quot;,
+                    &quot;icon_url&quot;: &quot;https://cdn.discordapp.com/embed/avatars/0.png&quot;
+                },
+                &quot;timestamp&quot;: datetime.now().isoformat()
+            }
+            
+            payload = {
+                &quot;content&quot;: f&quot;🔬 **New Publication Alert!**&quot;,
+                &quot;embeds&quot;: [embed]
+            }
+            
+            try:
+                response = requests.post(webhook_url, json=payload, timeout=10)
+                response.raise_for_status()
+                self.logger.info(f&quot;Sent notification for: {title[:50]}...&quot;)
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f&quot;Failed to send Discord notification: {e}&quot;)
+    
+    def debug_entry_fields(self, entry):
+        &quot;&quot;&quot;Debug function to log available fields in an entry&quot;&quot;&quot;
+        self.logger.debug(&quot;Available entry fields:&quot;)
+        for attr in dir(entry):
+            if not attr.startswith(&#39;_&#39;):
+                try:
+                    value = getattr(entry, attr)
+                    if value and not callable(value):
+                        self.logger.debug(f&quot;  {attr}: {str(value)[:100]}...&quot;)
+                except:
+                    pass
+    
+    def process_feed(self, feed_config):
+        &quot;&quot;&quot;Process a single RSS feed&quot;&quot;&quot;
+        feed_name = feed_config[&#39;name&#39;]
+        feed_url = feed_config[&#39;url&#39;]
+        feed_color = feed_config.get(&#39;color&#39;, 0x0099ff)
+        
+        self.logger.info(f&quot;Processing feed: {feed_name}&quot;)
+        
+        try:
+            # Parse RSS feed
+            feed = feedparser.parse(feed_url)
+            
+            if feed.bozo:
+                self.logger.warning(f&quot;Feed {feed_name} has parsing issues: {feed.bozo_exception}&quot;)
+            
+            if not feed.entries:
+                self.logger.warning(f&quot;No entries found in feed: {feed_name}&quot;)
+                return
+            
+            # Load previously seen items
+            seen_items = self.load_seen_items(feed_name)
+            new_entries = []
+            
+            # Check for new entries
+            for i, entry in enumerate(feed.entries):
+                # Debug first entry to see available fields
+                if i == 0:
+                    self.debug_entry_fields(entry)
+                
+                item_id = self.generate_item_id(entry)
+                if item_id not in seen_items:
+                    new_entries.append(entry)
+                    seen_items.add(item_id)
+            
+            if new_entries:
+                self.logger.info(f&quot;Found {len(new_entries)} new entries in {feed_name}&quot;)
+                self.send_discord_notification(feed_name, new_entries, feed_color)
+            else:
+                self.logger.info(f&quot;No new entries in {feed_name}&quot;)
+            
+            # Save updated state
+            self.save_seen_items(feed_name, seen_items)
+            
+        except Exception as e:
+            self.logger.error(f&quot;Error processing feed {feed_name}: {e}&quot;)
+    
+    def run(self):
+        &quot;&quot;&quot;Main execution method&quot;&quot;&quot;
+        self.logger.info(&quot;Starting RSS monitor&quot;)
+        
+        for feed_config in self.config[&#39;feeds&#39;]:
+            self.process_feed(feed_config)
+        
+        self.logger.info(&quot;RSS monitor completed&quot;)
+
+def main():
+    &quot;&quot;&quot;Main function&quot;&quot;&quot;
+    try:
+        monitor = RSSMonitor(CONFIG)
+        monitor.run()
+    except KeyboardInterrupt:
+        print(&quot;\nMonitor interrupted by user&quot;)
+        sys.exit(0)
+    except Exception as e:
+        logging.error(f&quot;Unexpected error: {e}&quot;)
+        sys.exit(1)
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre><p><br></p></div></div></article></main><div class="scene scene--bottom"><img alt="Snow-covered volcanic mountain range under a pale sky" class="scene-photo" height="753" src="/assets/img/mountain.jpg" width="1600" loading="lazy"><footer class="scene-credits"><span>© 2026 NitroxHead</span></footer></div><script src="/assets/trek.js" defer="defer"></script></body></html>

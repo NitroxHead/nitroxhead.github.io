@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>NitroxHead</title>
+<link>https://nitroxhead.github.io/</link>
+<description>Computation, marine science, and the questions that outrun them.</description>
+<language>en</language>
+<lastBuildDate>Thu, 20 Aug 2026 05:15:38 +0000</lastBuildDate>
+<item>
+<title>How We Could Build a Ruler Better Than the Best One We Have</title>
+<link>https://nitroxhead.github.io/blog/how-we-could-build-a-ruler-better-than-the-best-one-we-have.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/how-we-could-build-a-ruler-better-than-the-best-one-we-have.html</guid>
+<pubDate>Wed, 19 Aug 2026 00:00:00 +0000</pubDate>
+<description>Every instrument is checked against a better instrument, until you reach the last one in the chain. What checks that one? On plateaus, on the central limit theorem, and on what an evolutionary search does that a single answer cannot.</description>
+</item>
+<item>
+<title>The Metric Trap: Why Co-Evolution Is the Missing Piece in LLM Systems</title>
+<link>https://nitroxhead.github.io/blog/the-metric-trap-co-evolution-in-llm-systems.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/the-metric-trap-co-evolution-in-llm-systems.html</guid>
+<pubDate>Sun, 15 Feb 2026 00:00:00 +0000</pubDate>
+<description>Every EvoLLM system hits the same wall: a fixed fitness function. Biology solved it with co-evolution billions of years ago.</description>
+</item>
+<item>
+<title>Distributions, From Power Law to Normal and Hierarchy</title>
+<link>https://nitroxhead.github.io/blog/distributions-from-power-law-to-normal.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/distributions-from-power-law-to-normal.html</guid>
+<pubDate>Sun, 31 Aug 2025 00:00:00 +0000</pubDate>
+<description>Why power laws refuse to die, when they collapse into normals, and how a hierarchy of scales decides which distribution you actually observe.</description>
+</item>
+<item>
+<title>Dancing with Chaos: The Art and Impossibility of Predicting the Future</title>
+<link>https://nitroxhead.github.io/blog/dancing-with-chaos.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/dancing-with-chaos.html</guid>
+<pubDate>Mon, 04 Aug 2025 00:00:00 +0000</pubDate>
+<description>A hands-on tour of chaos: the double pendulum, Lyapunov divergence, ensemble forecasting, and why deterministic systems become unpredictable.</description>
+</item>
+<item>
+<title>The Computational Limits of Universal Prediction</title>
+<link>https://nitroxhead.github.io/blog/the-computational-limits-of-universal-prediction.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/the-computational-limits-of-universal-prediction.html</guid>
+<pubDate>Fri, 27 Jun 2025 00:00:00 +0000</pubDate>
+<description>You can't precisely simulate or predict the behavior of every atom in the universe because you'd need at least as much computational power as the universe…</description>
+</item>
+<item>
+<title>Moving Beyond the Homoscedasticity Assumption</title>
+<link>https://nitroxhead.github.io/blog/moving-beyond-the-homoscedasticity-assumption.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/moving-beyond-the-homoscedasticity-assumption.html</guid>
+<pubDate>Fri, 16 May 2025 00:00:00 +0000</pubDate>
+<description>Recently while scrolling through social media, I saw an article posting with a catchy name: 'Location-Scale Meta-Analysis and Meta-Regression as a Tool to…</description>
+</item>
+<item>
+<title>Could Asteroid Dust Cook Up Life? Mind-Blowing Discoveries from Bennu</title>
+<link>https://nitroxhead.github.io/blog/could-asteroid-dust-cook-up-life.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/could-asteroid-dust-cook-up-life.html</guid>
+<pubDate>Mon, 14 Apr 2025 00:00:00 +0000</pubDate>
+<description>I recently saw this interesting article from Eos about NASA's analysis of samples from asteroid Bennu, and it got my brain spinning with some wild thought…</description>
+</item>
+<item>
+<title>So You've Decided to Make a Model: The Philosophical Wonder of Predictive Systems</title>
+<link>https://nitroxhead.github.io/blog/so-youve-decided-to-make-a-model.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/so-youve-decided-to-make-a-model.html</guid>
+<pubDate>Mon, 07 Apr 2025 00:00:00 +0000</pubDate>
+<description>Questioning; Imagine this: You collect thousands of data points about house prices—square footage, number of bedrooms, neighborhood statistics, school ratings.…</description>
+</item>
+<item>
+<title>Understanding PLS : A Computational Walkthrough</title>
+<link>https://nitroxhead.github.io/blog/understanding-pls-a-computational-walkthrough.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/understanding-pls-a-computational-walkthrough.html</guid>
+<pubDate>Fri, 04 Apr 2025 00:00:00 +0000</pubDate>
+<description>A step-by-step computational walkthrough of Partial Least Squares: NIPALS, scores and loadings, deflation, and prediction.</description>
+</item>
+<item>
+<title>We Can Simulate Intelligence, But Not Its First Spark</title>
+<link>https://nitroxhead.github.io/blog/we-can-simulate-intelligence-but-not-its-first-spark.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/we-can-simulate-intelligence-but-not-its-first-spark.html</guid>
+<pubDate>Tue, 11 Mar 2025 00:00:00 +0000</pubDate>
+<description>I was watching a YouTube video recently where someone created a simulation featuring predators and prey, which got me thinking about intelligence and its origins.</description>
+</item>
+<item>
+<title>An Overview into Emerging Patterns in Neural Network Models</title>
+<link>https://nitroxhead.github.io/blog/emerging-patterns-in-neural-network-models.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/emerging-patterns-in-neural-network-models.html</guid>
+<pubDate>Sat, 18 Jan 2025 00:00:00 +0000</pubDate>
+<description>I was watching a video ( link ) about something called the 'efficient compute frontier' - a phenomenon that's claimed being observed across different AI…</description>
+</item>
+<item>
+<title>When Cells Move In Together: The Fascinating World of Endosymbiosis</title>
+<link>https://nitroxhead.github.io/blog/when-cells-move-in-together-endosymbiosis.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/when-cells-move-in-together-endosymbiosis.html</guid>
+<pubDate>Sat, 11 Jan 2025 00:00:00 +0000</pubDate>
+<description>I recently read an intriguing blog post that took me back to my biology classes. Remember learning about mitochondria, the powerhouse of the cell? I distinctly…</description>
+</item>
+<item>
+<title>A Daily Commute Dilemma: A Thought Experiment on Train Efficiency</title>
+<link>https://nitroxhead.github.io/blog/a-daily-commute-dilemma.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/a-daily-commute-dilemma.html</guid>
+<pubDate>Fri, 03 Jan 2025 00:00:00 +0000</pubDate>
+<description>I ride the Marmaray on my daily commute. It’s an intercontinental train! It carries me from my home on the Asian side of Istanbul to the European side, where…</description>
+</item>
+<item>
+<title>We Solve With a Given Tool's Vision</title>
+<link>https://nitroxhead.github.io/blog/we-solve-with-a-given-tools-vision.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/we-solve-with-a-given-tools-vision.html</guid>
+<pubDate>Mon, 16 Dec 2024 00:00:00 +0000</pubDate>
+<description>For my Data Science MSc, I was tasked with doing an optimization presentation where I was free to do it about whatever I wanted, preferably about one of the…</description>
+</item>
+<item>
+<title>2024 STSM Experience</title>
+<link>https://nitroxhead.github.io/blog/2024-stsm-experience.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/2024-stsm-experience.html</guid>
+<pubDate>Wed, 30 Oct 2024 00:00:00 +0000</pubDate>
+<description>Scientific Part; Embarking on a Short-Term Scientific Mission (STSM) as part of the COST project was an enlightening journey into the realm of plastic…</description>
+</item>
+<item>
+<title>Theoretical Solar Irradiance and Luminance</title>
+<link>https://nitroxhead.github.io/blog/theoretical-solar-irradiance-and-luminance.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/theoretical-solar-irradiance-and-luminance.html</guid>
+<pubDate>Sun, 15 Sep 2024 00:00:00 +0000</pubDate>
+<description>As the title suggests, I found myself needing solar irradiance and luminance data for a personal project. Accuracy wasn't my top priority; theoretical…</description>
+</item>
+<item>
+<title>New Tool: Following a Particle In Ocean</title>
+<link>https://nitroxhead.github.io/blog/following-a-particle-in-the-ocean.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/following-a-particle-in-the-ocean.html</guid>
+<pubDate>Fri, 30 Aug 2024 00:00:00 +0000</pubDate>
+<description>As I mentioned in one of my previous posts, I recently attended an eel meeting. During the meeting, one of the presenters shared a publication he was involved…</description>
+</item>
+<item>
+<title>New Oxygen Production In The Ocean</title>
+<link>https://nitroxhead.github.io/blog/new-oxygen-production-in-the-ocean.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/new-oxygen-production-in-the-ocean.html</guid>
+<pubDate>Sun, 04 Aug 2024 00:00:00 +0000</pubDate>
+<description>You might heard about on social media already. This article became very popular and I received lots of messages reagarding it. It is the article about dar…</description>
+</item>
+<item>
+<title>The File Structure Of My Projects</title>
+<link>https://nitroxhead.github.io/blog/the-file-structure-of-my-projects.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/the-file-structure-of-my-projects.html</guid>
+<pubDate>Wed, 03 Jul 2024 00:00:00 +0000</pubDate>
+<description>After painstakingly working with a mess of files in various projects, I had to come up with a method to better handle the data. This semester, I took a course…</description>
+</item>
+<item>
+<title>Light Makes Water Evaporate</title>
+<link>https://nitroxhead.github.io/blog/light-makes-water-evaporate.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/light-makes-water-evaporate.html</guid>
+<pubDate>Mon, 24 Jun 2024 00:00:00 +0000</pubDate>
+<description>There is a new update to the world! It appears water evaporates more when exposed to light. It’s been just discovered in a new study. This paper was first…</description>
+</item>
+<item>
+<title>New Algorithm Speeds Up Ocean Modeling (spin-up)</title>
+<link>https://nitroxhead.github.io/blog/new-algorithm-speeds-up-ocean-modeling-spinup.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/new-algorithm-speeds-up-ocean-modeling-spinup.html</guid>
+<pubDate>Sun, 16 Jun 2024 00:00:00 +0000</pubDate>
+<description>Understanding the cycling of geochemical and biogeochemical tracers in the ocean relies heavily on numerical models. These tracers are vital components of…</description>
+</item>
+<item>
+<title>Current Day Alchemy</title>
+<link>https://nitroxhead.github.io/blog/current-day-alchemy.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/current-day-alchemy.html</guid>
+<pubDate>Mon, 10 Jun 2024 00:00:00 +0000</pubDate>
+<description>Recently, I had the chance to attend an annual meeting of a COST project. It was my first time attending such a meeting. This project is about the European eel…</description>
+</item>
+<item>
+<title>Underwater Mass Spectrometry?</title>
+<link>https://nitroxhead.github.io/blog/underwater-mass-spectrometry.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/underwater-mass-spectrometry.html</guid>
+<pubDate>Thu, 30 May 2024 00:00:00 +0000</pubDate>
+<description>Welcome to the 'Cool Papers' series, where I share some of the most fascinating scientific papers I come across. With the vast number of publications out…</description>
+</item>
+<item>
+<title>Achieving Technological Singularity through Analog Computing</title>
+<link>https://nitroxhead.github.io/blog/technological-singularity-via-analog-computing.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/technological-singularity-via-analog-computing.html</guid>
+<pubDate>Sat, 25 May 2024 00:00:00 +0000</pubDate>
+<description>At this point, it is almost a cliché to discuss how ChatGPT has transformed our world and strengthened our belief in the power of neural network modeling. We…</description>
+</item>
+<item>
+<title>Randomness in Biosphere (incl. Quantum Mechanics)</title>
+<link>https://nitroxhead.github.io/blog/randomness-in-the-biosphere.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/randomness-in-the-biosphere.html</guid>
+<pubDate>Thu, 16 May 2024 00:00:00 +0000</pubDate>
+<description>What is random? Randomness is a fundamental concept that pervades many aspects of our lives, yet its essence often eludes precise definition. At its core,…</description>
+</item>
+<item>
+<title>How many digits of Pi are enough?</title>
+<link>https://nitroxhead.github.io/blog/how-many-digits-of-pi-are-enough.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/how-many-digits-of-pi-are-enough.html</guid>
+<pubDate>Tue, 02 Apr 2024 00:00:00 +0000</pubDate>
+<description>Calculation with ASCII Math In one of our lectures, the professor mentioned a fascinating concept: with just 10 digits of pi, we can accurately calculate the…</description>
+</item>
+<item>
+<title>Streetlight Effect in Science</title>
+<link>https://nitroxhead.github.io/blog/streetlight-effect-in-science.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/streetlight-effect-in-science.html</guid>
+<pubDate>Tue, 13 Feb 2024 00:00:00 +0000</pubDate>
+<description>In the labyrinth of scientific inquiry, there exists a phenomenon known as the 'streetlight effect.' This concept, rooted in human cognition and perception,…</description>
+</item>
+<item>
+<title>Taxonomic Distance</title>
+<link>https://nitroxhead.github.io/blog/taxonomic-distance.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/taxonomic-distance.html</guid>
+<pubDate>Fri, 26 Jan 2024 00:00:00 +0000</pubDate>
+<description>Taxonomic distance, a fascinating concept in biology and ecology, measures the evolutionary divergence among species or taxa. This concept, crucial for…</description>
+</item>
+<item>
+<title>Oceanographic Data Sources </title>
+<link>https://nitroxhead.github.io/blog/oceanographic-data-sources.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/oceanographic-data-sources.html</guid>
+<pubDate>Mon, 08 Jan 2024 00:00:00 +0000</pubDate>
+<description>You might be looking for oceanographic data for modeling or other purposes. I like to use them for modelling there for knowing my options is crucial. Here is…</description>
+</item>
+<item>
+<title>Handling Extremly Small Numbers in R</title>
+<link>https://nitroxhead.github.io/blog/handling-extremely-small-numbers-in-r.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/handling-extremely-small-numbers-in-r.html</guid>
+<pubDate>Fri, 05 Jan 2024 00:00:00 +0000</pubDate>
+<description>In my journey through the field of phylogenetics, I've often grappled with the challenges posed by extremely small numbers. These values, sometimes less than…</description>
+</item>
+<item>
+<title>Small Scripts</title>
+<link>https://nitroxhead.github.io/blog/small-scripts.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/small-scripts.html</guid>
+<pubDate>Wed, 27 Dec 2023 00:00:00 +0000</pubDate>
+<description>I will be sharing small scripts I have. I use them time to time. Before writing them I look for ready made ones to save time, these are the ones I couldn't…</description>
+</item>
+<item>
+<title>My First Experience With GC (Gas Chromatography) Part I</title>
+<link>https://nitroxhead.github.io/blog/first-experience-with-gc-part-1.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/first-experience-with-gc-part-1.html</guid>
+<pubDate>Fri, 22 Dec 2023 00:00:00 +0000</pubDate>
+<description>Typically, I strive to maintain the informative nature of my blog posts. Consequently, I tend to discuss topics I am familiar with. However, this time, I am…</description>
+</item>
+<item>
+<title>Harmony of R and C++ (Rcpp): Introduction </title>
+<link>https://nitroxhead.github.io/blog/harmony-of-r-and-cpp-rcpp.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/harmony-of-r-and-cpp-rcpp.html</guid>
+<pubDate>Sun, 29 Oct 2023 00:00:00 +0000</pubDate>
+<description>Have you ever encountered the need to run nested loops in R, even for tasks that aren't computationally intensive? I often find myself wanting to manipulate…</description>
+</item>
+<item>
+<title>Moving from Univariate to Multivariate Time Series Prediction with LSTM: Addressing Optimization Challenges</title>
+<link>https://nitroxhead.github.io/blog/moving-from-univariate-to-multivariate-time-series.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/moving-from-univariate-to-multivariate-time-series.html</guid>
+<pubDate>Thu, 26 Oct 2023 00:00:00 +0000</pubDate>
+<description>Long Short-Term Memory (LSTM) neural networks have become a powerhouse in the world of time series prediction. Many of us start our journey with LSTMs by…</description>
+</item>
+<item>
+<title>Single Day Project 1: Track Changes Of Webpages</title>
+<link>https://nitroxhead.github.io/blog/track-changes-of-webpages.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/track-changes-of-webpages.html</guid>
+<pubDate>Thu, 26 Oct 2023 00:00:00 +0000</pubDate>
+<description>In life, many of our endeavors take several days, weeks, or even months to come to fruition. The waiting period can be a test of patience, and at times, it can…</description>
+</item>
+<item>
+<title>Hello World!</title>
+<link>https://nitroxhead.github.io/blog/hello-world.html</link>
+<guid isPermaLink="true">https://nitroxhead.github.io/blog/hello-world.html</guid>
+<pubDate>Wed, 25 Oct 2023 00:00:00 +0000</pubDate>
+<description>Hello World! This is the first page ever of my blog. This blog is here to document my journey. There is no order, topic or format. Along the way I though some…</description>
+</item>
+</channel>
+</rss>

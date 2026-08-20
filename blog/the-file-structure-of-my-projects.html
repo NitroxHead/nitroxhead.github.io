@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width,initial-scale=1" name="viewport"><meta content="After painstakingly working with a
+mess of files in various projects, I had to come up with a method to
+better handle the data. This semester, I took a course…" name="description"><title>The File Structure Of My Projects · NitroxHead</title><meta content="NitroxHead" property="og:site_name"><meta content="article" property="og:type"><meta content="The File Structure Of My Projects" property="og:title"><meta content="After painstakingly working
+with a mess of files in various projects, I had to come up with a method
+to better handle the data. This semester, I took a course…" property="og:description"><meta content="https://nitroxhead.github.io/assets/img/mountain.jpg" property="og:image"><meta content="summary_large_image" name="twitter:card"><link href="/feed.xml" rel="alternate" type="application/rss+xml" title="NitroxHead"><link href="/assets/img/avatar.png" rel="icon" type="image/png"><link href="/assets/style.css" rel="stylesheet"><script src="the-file-structure-of-my-projects_files/header-attrs-2.29/header-attrs.js"></script></head><body><header class="site-header"><a href="/" class="brand"><img alt="" class="avatar" height="400" src="/assets/img/avatar.png" width="400"> NitroxHead</a><nav><div class="nav-drop"><button class="nav-drop-trigger" type="button">Pages</button><div class="nav-drop-menu"><a href="/mathematical-reality/">The Structure of Mathematical Reality</a></div></div><a href="/blog/">Blog</a> <a href="/contact.html">Contact</a> <a href="https://github.com/NitroxHead">GitHub</a></nav></header><main class="wrap"><article><h1>The File Structure Of My Projects</h1><p class="post-meta">3 July 2024</p><p>After painstakingly working with a mess of files in various projects, I had to come up with a method to better handle the data. This semester, I took a course named Methodology of Scientific Research (<a href="http://www.dry-lab.org/blog/2024/msr/" rel="nofollow" target="_blank">page of the course</a>), and we discussed good practices for handling data. I have been using the suggested structure ever since, and I believe the method mentioned in that course is applicable to those who might be reading this blog. Therefore, I wanted to share how I’ve been working over the past couple of months.<br><br>First, I want to talk about storing and categorizing data. The easiest way to do this is with a folder structure. During the course, there was extensive discussion on how the folder structure should be organized. I think what matters is the structure within the project. The course suggested the file structure also recommended <a href="https://doi.org/10.1371/journal.pcbi.1000424" rel="nofollow" target="_blank">here</a>, and I agree with it. I think this structure is easy to understand for outsiders and practical for users. Here is the nice visualization by Andrés; <a href="https://www.dry-lab.org/slides/2023/bsc/images/folder-struct.svg" rel="nofollow" target="_blank">https://www.dry-lab.org/slides/2023/bsc/images/folder-struct.svg</a><br></p><p>One change I make is creating a log file in the root location of the project folder, where I write every transaction that happens for that project. This includes discussions, long-term and short-term goals, and everything in between. I keep the log file in Markdown format. While reading it might not be too easy for non-programming people, the styling characters used in that file don’t impair the legibility of the text. I have tested it with two biologists, and it worked well so far.<br><br>During the course, using Cookiecutter was suggested to me, but I wasn’t really into it at first since creating a few folders isn’t a time-consuming task. However, in the past few months, I’ve been switching between projects more often than ever, and I use Jupyter Notebook for working on Python scripts. I was getting tired of handling kernels for each notebook and opening relevant ones. I switched to JupyterLab, which is a better product for that purpose, yet I still had to close all the notebooks and kernels when switching between projects.<br><br>I decided to create a Conda environment for each project, allowing me to connect and continue my JupyterLab session from where I left off and to make collaboration easier by enabling us to work with the same packages and versions. In short, I made my own kind of cookie cutter that creates the project folder structure and sets up a Conda environment within that folder for me. Having a separate environment for every project does create a certain file size load, but I believe it is beneficial for the kind of work I do.<br><br>I’ve been optimizing my folder structure for just a few months now, and as an early-career researcher, I have limited experience in these areas. I’m sure I will change and improve my approach over time. I will try to keep this page updated, but to be sure, please refer to my GitHub profile to see if there are newer scripts I utilize in this regard.</p><p>For more information in this regard please refer to this beautiful presentation; <a href="https://www.dry-lab.org/slides/2023/bsc/#/folder-structure-for-data-projects%20" rel="nofollow" target="_blank">https://www.dry-lab.org/slides/2023/bsc/#/folder-structure-for-data-projects</a><br></p><p>Here is the current script I use to create basic structure of the project folder;</p><p>in the script what refer as muggel is those whom can’t code. In plain English it is asking if you want to create new Coda environment.<br></p><pre><code>#!/bin/bash
+
+# Function to ask user for muggels project preference
+ask_for_muggels() {
+    read -p &quot;Will you be working exclusively with muggels for this project? (y/n, default: y): &quot; answer
+    case &quot;$answer&quot; in
+        [Nn]* ) return 1;;  # User does not want to work exclusively with muggels
+        * ) return 0;;      # Default to working with muggels (assume &#39;yes&#39;)
+    esac
+}
+
+# Check if project name is provided as argument
+if [ $# -eq 0 ]; then
+    echo &quot;Usage: $0 &lt;project_name&gt;&quot;
+    exit 1
+fi
+
+# Assign project name from the first argument
+project_name=$1
+
+# Directories to create
+directories=(
+    &quot;code&quot;
+    &quot;bib&quot;
+    &quot;docs&quot;
+    &quot;results&quot;
+    &quot;bib&quot;
+    &quot;extra&quot;
+    &quot;.conda&quot;
+)
+
+# Create directories using project name
+for dir in &quot;${directories[@]}&quot;
+do
+    mkdir -p ~/ftp/puntcem/iu/&quot;$project_name&quot;/&quot;$dir&quot;
+done
+
+# Create a new log.md file in the project directory
+touch ~/ftp/puntcem/iu/&quot;$project_name&quot;/log.md
+
+# Ask user if working exclusively with muggels
+ask_for_muggels
+muggels_only=$?
+
+# If not working exclusively with muggels, proceed with conda environment setup
+if [ $muggels_only -ne 0 ]; then
+    # Create conda environment and accept all prompts with -y flag
+    conda create -y --prefix ~/ftp/puntcem/iu/&quot;$project_name&quot;/.conda
+
+    # Create symlink to activate the conda environment
+    ln -s ~/ftp/puntcem/iu/&quot;$project_name&quot;/.conda ~/.conda/envs/&quot;$project_name&quot;
+
+    # Activate conda environment
+    conda activate &quot;$project_name&quot;
+
+    # Install required packages (example: jupyterlab) and accept all prompts with -y flag
+    conda install -y -n &quot;$project_name&quot; -c conda-forge jupyterlab
+fi
+
+# Change directory to the project directory
+cd ~/ftp/puntcem/iu/&quot;$project_name&quot;
+
+# Launch the markdown editor with the log.md file
+marktext -n --disable-gpu log.md &amp;
+
+echo &quot;Project setup completed for &#39;$project_name&#39;.&quot;</code></pre><p><br></p></article></main><div class="scene scene--bottom"><img alt="Snow-covered volcanic mountain range under a pale sky" class="scene-photo" height="753" src="/assets/img/mountain.jpg" width="1600" loading="lazy"><footer class="scene-credits"><span>© 2026 NitroxHead</span></footer></div><script src="/assets/trek.js" defer="defer"></script></body></html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width,initial-scale=1" name="viewport"><meta content="As the title suggests, I found myself
+needing solar irradiance and luminance data for a personal project.
+Accuracy wasn’t my top priority; theoretical…" name="description"><title>Theoretical Solar Irradiance and Luminance · NitroxHead</title><meta content="NitroxHead" property="og:site_name"><meta content="article" property="og:type"><meta content="Theoretical Solar Irradiance and Luminance" property="og:title"><meta content="As the title suggests, I found
+myself needing solar irradiance and luminance data for a personal
+project. Accuracy wasn’t my top priority; theoretical…" property="og:description"><meta content="https://nitroxhead.github.io/assets/img/mountain.jpg" property="og:image"><meta content="summary_large_image" name="twitter:card"><link href="/feed.xml" rel="alternate" type="application/rss+xml" title="NitroxHead"><link href="/assets/img/avatar.png" rel="icon" type="image/png"><link href="/assets/style.css" rel="stylesheet"><script src="theoretical-solar-irradiance-and-luminance_files/header-attrs-2.29/header-attrs.js"></script></head><body><header class="site-header"><a href="/" class="brand"><img src="/assets/img/avatar.png" alt="" class="avatar" height="400" width="400"> NitroxHead</a><nav><div class="nav-drop"><button class="nav-drop-trigger" type="button">Pages</button><div class="nav-drop-menu"><a href="/mathematical-reality/">The Structure of Mathematical Reality</a></div></div><a href="/blog/">Blog</a> <a href="/contact.html">Contact</a> <a href="https://github.com/NitroxHead">GitHub</a></nav></header><main class="wrap"><article><h1>Theoretical Solar Irradiance and Luminance</h1><p class="post-meta">15 September 2024</p><p>As the title suggests, I found myself needing solar irradiance and luminance data for a personal project. Accuracy wasn’t my top priority; theoretical estimates would suffice. I’m not an expert in astronomy or astrophysics, so I turned to large language models (LLMs) for assistance in generating the data.</p><p>The process of getting my first results was surprisingly fast and straightforward, thanks to Python’s streamlined libraries. Within an hour, I had generated an image. However, I soon realized that I needed a high-resolution version. While it was impressive how quickly I had usable results, this convenience soon became a limitation. Python, despite its accessibility and ease of use, is inherently slower due to the many calculations running in the background.</p><p>To overcome this, I decided to try converting the code to C++, a much faster language. However, this was well outside my comfort zone, and I quickly encountered challenges. I replaced the Python libraries with cSpice from NASA and began experimenting. After several hours of debugging, I managed to produce a result—but it seemed to be shifted in some direction, and I couldn’t pinpoint the issue. I’m sure an expert could easily identify the mistake, but that’s not me.</p><p>For now, I’ve decided to stick with Python, even if it means compromising on resolution. With my current setup, I can calculate data for four hours of a day at 1° resolution for both longitude and latitude. Running on a single core of my laptop, this process takes around 22 minutes. I’ll keep chipping away at it in the coming nights.</p><p>I will be sharing Python code and the problematic C++ version. If anyone reading this has experience with cSpice or similar tools, I’d love to hear your suggestions for fixing the C++ code!</p><div class="level4 section" id="update-20240929"><h4>UPDATE 2024/09/29:</h4><p>After publishing my initial code, I wasn’t satisfied with the results on the C++ front. Frustrated by the lack of progress, I decided to take a chance and seek advice from experts. The problem I was working on required knowledge of both astronomy and coding, a combination that felt rare. Honestly, I didn’t think I’d get much help. Still, I turned to the Stack Exchange platform, specifically the Astronomy section. It was my first time using the site, so I wasn’t entirely sure of the etiquette or rules, but I gave it my best shot and explained my problem in <a href="https://astronomy.stackexchange.com/questions/58602/incorrect-solar-data-output-using-spice-toolkit" rel="nofollow" target="_blank">a post</a>.</p><p>A day went by, and my post had gathered around 100 views, but the only response was a comment confirming that my image was correct. The next day, someone else chimed in and pointed out a mistake—apparently, I was using different time units within my calculation function. I quickly corrected that, hopeful it would solve the problem, but unfortunately, the result remained unchanged.</p><p>By then, my hope was dwindling. The same person returned and suggested the error might stem from how my variables handled after calculation. Taking their advice, I adjusted the code as they had recommended. I could hardly believe my eyes—it worked! After hours of staring at my code, convinced the problem lay in the calculation function, I believe this mistake I made was because I don’t have much experience with C family of languages. I will work on that.</p><p>What made this experience even more fascinating was the person who helped me. Unlike most users, they were using their real name, so I decided to Google them. As it turns out, they graduated from Cornell University with a degree in Physics in 1978! But it didn’t stop there. In the experience section of their LinkedIn profile, they had written, “I have retired; please stop trying to recruit me.”</p><p>As I write this, I estimate they’re around 70 years old. Yet here they are, not only still engaged with these technical topics but also dedicating time to help others solve problems. And they’re so well-regarded in their field that they had to explicitly state they’re no longer available for work!</p><p>That to me this is an example of success.</p><p><a href="https://github.com/NitroxHead/blog_posts/tree/main/Theoretical%20Solar%20Irradiance%20and%20Luminance" class="uri">https://github.com/NitroxHead/blog_posts/tree/main/Theoretical%20Solar%20Irradiance%20and%20Luminance</a><br></p><p>Python version;</p><p>Preview;</p><p><br></p><p>Code;<br></p><pre><code>import numpy as np
+import xarray as xr
+from datetime import datetime, timedelta
+from skyfield.api import Topos, load, utc
+import multiprocessing as mp
+
+# Load ephemeris data from Skyfield
+eph = load(&#39;de421.bsp&#39;)
+sun = eph[&#39;sun&#39;]
+earth = eph[&#39;earth&#39;]
+
+# Define the datetime range
+start_date = datetime(2019, 1, 1, tzinfo=utc)
+end_date = datetime(2022, 1, 1, tzinfo=utc)  # Adjust this to your desired end date
+ts = load.timescale()
+
+# Create a grid of latitude and longitude coordinates
+latitudes = np.arange(-90, 90, 1)
+longitudes = np.arange(-180, 180, 1)
+
+# Solar constant (W/m²)
+solar_constant = 1361  # W/m²
+
+# Conversion factor from solar irradiance (W/m²) to luminance (lux)
+conversion_factor = 93  # lumens/m² per W/m²
+
+def calculate_solar_data(time):
+    solar_irradiance = np.zeros((len(latitudes), len(longitudes)))
+    luminance = np.zeros((len(latitudes), len(longitudes)))
+
+    for i, lat in enumerate(latitudes):
+        for j, lon in enumerate(longitudes):
+            location = earth + Topos(latitude_degrees=lat, longitude_degrees=lon)
+            astrometric = location.at(time).observe(sun)
+            alt, _, _ = astrometric.apparent().altaz()
+
+            if alt.degrees &gt; 0:
+                irradiance = solar_constant * np.sin(np.radians(alt.degrees))
+                solar_irradiance[i, j] = irradiance
+                luminance[i, j] = irradiance * conversion_factor
+
+    return solar_irradiance, luminance
+
+def create_netcdf(date):
+    times = [date + timedelta(hours=6*i) for i in range(8)]  # 8 intervals of 3 hours over a 24-hour period
+    skyfield_times = ts.from_datetimes(times)
+    
+    # Convert skyfield_times to numpy.datetime64 for xarray compatibility
+    times_np = np.array([t.utc_strftime(&#39;%Y-%m-%dT%H:%M:%S&#39;) for t in skyfield_times])  # ISO 8601 format
+
+    solar_irradiance_data = []
+    luminance_data = []
+
+    for time in skyfield_times:
+        irradiance, lum = calculate_solar_data(time)
+        solar_irradiance_data.append(irradiance)
+        luminance_data.append(lum)
+
+    # Create xarray dataset
+    ds = xr.Dataset(
+        {
+            &quot;solar_irradiance&quot;: ([&quot;time&quot;, &quot;latitude&quot;, &quot;longitude&quot;], np.array(solar_irradiance_data)),
+            &quot;luminance&quot;: ([&quot;time&quot;, &quot;latitude&quot;, &quot;longitude&quot;], np.array(luminance_data)),
+        },
+        coords={
+            &quot;longitude&quot;: longitudes,
+            &quot;latitude&quot;: latitudes,
+            &quot;time&quot;: times_np,  # Use the numpy datetime64 array
+        },
+    )
+
+    # Set time encoding
+    ds.time.encoding[&#39;units&#39;] = &#39;hours since 1950-01-01 00:00:00&#39;
+    ds.time.encoding[&#39;calendar&#39;] = &#39;gregorian&#39;
+
+    # Set variable attributes
+    ds.solar_irradiance.attrs[&#39;units&#39;] = &#39;W/m²&#39;
+    ds.solar_irradiance.attrs[&#39;long_name&#39;] = &#39;Solar Irradiance&#39;
+    ds.luminance.attrs[&#39;units&#39;] = &#39;lux&#39;
+    ds.luminance.attrs[&#39;long_name&#39;] = &#39;Luminance&#39;
+
+    # Set global attributes
+    ds.attrs[&#39;Conventions&#39;] = &#39;CF-1.6&#39;
+    ds.attrs[&#39;title&#39;] = &#39;Theoretical Solar Irradiance and Luminance Data&#39;
+    ds.attrs[&#39;MadeBy&#39;] = &#39;NitroxHead&#39;
+    ds.attrs[&#39;source&#39;] = &#39;Generated from Skyfield calculations&#39;
+    ds.attrs[&#39;constants&#39;] = &#39;93  # lumens/m² per W/m² \n 1361  # W/m²&#39;
+    ds.attrs[&#39;history&#39;] = f&#39;Created on {datetime.now(utc).strftime(&quot;%Y-%m-%d %H:%M:%S UTC&quot;)}&#39;
+
+    # Save to NetCDF file
+    filename = f&#39;solar_data_{date.strftime(&quot;%Y%m%d&quot;)}.nc&#39;
+    ds.to_netcdf(filename, engine=&#39;h5netcdf&#39;)
+    print(f&#39;Created {filename}&#39;)
+
+def process_date_range(start, end):
+    current_date = start
+    while current_date &lt; end:
+        create_netcdf(current_date)
+        current_date += timedelta(days=1)
+
+if __name__ == &#39;__main__&#39;:
+    # Calculate the number of days in the date range
+    total_days = (end_date - start_date).days
+
+    # Calculate the number of days each process should handle
+    num_cores = 4
+    days_per_process = total_days // num_cores
+
+    # Create a list of start and end dates for each process
+    date_ranges = [
+        (start_date + timedelta(days=i*days_per_process), 
+         start_date + timedelta(days=(i+1)*days_per_process))
+        for i in range(num_cores)
+    ]
+
+    # Ensure the last process covers any remaining days
+    date_ranges[-1] = (date_ranges[-1][0], end_date)
+
+    # Create a pool of worker processes
+    with mp.Pool(processes=num_cores) as pool:
+        # Use pool.starmap to apply process_date_range to each date range
+        pool.starmap(process_date_range, date_ranges)
+
+    print(&quot;All NetCDF files have been generated.&quot;) </code></pre><p><br>C++ version;Here is what it’s output looks like;</p><p><img src="/assets/img/blog/theoretical-solar-irradiance-and-luminance/fig1.png"></p><p><br> Code; <br></p><pre><code>//g++ -o lumi2 lumi2.cpp -I~/Downloads/cspice/include -L~/Downloads/cspice/lib ~/Downloads/cspice/lib/cspice.a -lm $(pkg-config --cflags --libs netcdf-cxx4)
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;cmath&gt;
+#include &lt;string&gt;
+#include &lt;chrono&gt;
+#include &lt;netcdf&gt;
+#include &quot;./include/SpiceUsr.h&quot;
+#include &lt;iomanip&gt;
+#include &lt;sstream&gt;
+
+// Constants
+const double SOLAR_CONSTANT = 1361.0; // W/m²
+const double CONVERSION_FACTOR = 93.0; // lumens/m² per W/m²
+const double DEG_TO_RAD = M_PI / 180.0;
+// New 3D Matrix class
+class Matrix3D {
+private:
+    std::vector&lt;double&gt; data_;
+    size_t l_, m_, n_;
+
+public:
+    Matrix3D(size_t l, size_t m, size_t n) : l_(l), m_(m), n_(n), data_(l*m*n) {}
+
+    double&amp; operator()(size_t i, size_t j, size_t k) {
+        return data_[i*m_*n_ + j*n_ + k];
+    }
+
+    const double&amp; operator()(size_t i, size_t j, size_t k) const {
+        return data_[i*m_*n_ + j*n_ + k];
+    }
+
+    double* data() { return data_.data(); }
+    const double* data() const { return data_.data(); }
+};
+
+void calculateSolarData(double et, double lat, double lon, double&amp; irradiance, double&amp; luminance) {
+    double sunPos[3], sunLt;
+    
+    // Get the Sun&#39;s position relative to Earth in J2000 frame
+    spkpos_c(&quot;SUN&quot;, et, &quot;J2000&quot;, &quot;LT+S&quot;, &quot;EARTH&quot;, sunPos, &amp;sunLt);
+
+    // Convert lat/lon to rectangular coordinates in ITRF93 (Earth-fixed) frame
+    double observerPos[3];
+    double alt = 0.0;  // Assume observer is at sea level
+    georec_c(lon * DEG_TO_RAD, lat * DEG_TO_RAD, alt, 6378.137, 0.0033528131, observerPos);
+
+    // Get the transformation matrix from ITRF93 to J2000 at the given time
+    double xform[3][3];
+    pxform_c(&quot;ITRF93&quot;, &quot;J2000&quot;, et, xform);
+
+    // Transform observer position to J2000 frame
+    double observerPosJ2000[3];
+    mxv_c(xform, observerPos, observerPosJ2000);
+
+    // Calculate the vector from observer to Sun in J2000 frame
+    double observerToSun[3];
+    vsub_c(sunPos, observerPosJ2000, observerToSun);
+
+    // Calculate the local zenith vector in ITRF93 frame
+    double zenithITRF[3];
+    surfnm_c(6378.137, 6378.137, 6356.752, observerPos, zenithITRF);
+
+    // Transform zenith to J2000 frame
+    double zenithJ2000[3];
+    mxv_c(xform, zenithITRF, zenithJ2000);
+
+    // Calculate the angle between zenith and Sun direction
+    double cosSolarZenithAngle = vdot_c(zenithJ2000, observerToSun) / (vnorm_c(zenithJ2000) * vnorm_c(observerToSun));
+    double solarZenithAngle = acos(cosSolarZenithAngle);
+    double altitude = halfpi_c() - solarZenithAngle;
+
+    if (altitude &gt; 0) {
+        irradiance = SOLAR_CONSTANT * sin(altitude);
+        luminance = irradiance * CONVERSION_FACTOR;
+    } else {
+        irradiance = 0.0;
+        luminance = 0.0;
+    }
+}
+/*
+void calculateSolarData(double et, double lat, double lon, double&amp; irradiance, double&amp; luminance) {
+    const double EARTH_TILT = 23.44 * DEG_TO_RAD; // Earth&#39;s axial tilt in radians
+    double sunPos[3], sunLt;
+    
+    // Get the Sun&#39;s position relative to Earth
+    spkpos_c(&quot;SUN&quot;, et, &quot;J2000&quot;, &quot;LT+S&quot;, &quot;EARTH&quot;, sunPos, &amp;sunLt);
+
+    // Convert lat/lon to rectangular coordinates on Earth&#39;s surface
+    double observerPos[3];
+    double alt = 0.0;  // Assume observer is at sea level
+    georec_c(lon * DEG_TO_RAD, lat * DEG_TO_RAD, alt, 6378.137, 0.0033528131, observerPos);
+
+    // Calculate the vector from observer to Sun
+    double observerToSun[3];
+    vsub_c(sunPos, observerPos, observerToSun);
+
+    // Adjust Sun position for Earth&#39;s tilt
+    double rotatedSunPos[3];
+    double rotationMatrix[3][3];
+    eul2m_c(0.0, EARTH_TILT, 0.0, 3, 2, 1, rotationMatrix); // Rotation around the x-axis by Earth&#39;s tilt
+    mxv_c(rotationMatrix, sunPos, rotatedSunPos); // Apply the rotation
+
+    // Calculate the local zenith vector
+    double zenith[3];
+    surfnm_c(6378.137, 6378.137, 6356.752, observerPos, zenith);
+
+    // Calculate the angle between zenith and the Sun&#39;s direction (with tilt adjustment)
+    double cosSolarZenithAngle = vdot_c(zenith, rotatedSunPos) / vnorm_c(rotatedSunPos);
+    double solarZenithAngle = acos(cosSolarZenithAngle);
+    double altitude = halfpi_c() - solarZenithAngle;
+
+    if (altitude &gt; 0) {
+        irradiance = SOLAR_CONSTANT * sin(altitude);
+        luminance = irradiance * CONVERSION_FACTOR;
+    } else {
+        irradiance = 0.0;
+        luminance = 0.0;
+    }
+}
+*/
+void createNetCDFOutput(const std::string&amp; filename,
+                        const std::vector&lt;double&gt;&amp; times,
+                        const std::vector&lt;double&gt;&amp; latitudes,
+                        const std::vector&lt;double&gt;&amp; longitudes,
+                        const Matrix3D&amp; solarIrradiance,
+                        const Matrix3D&amp; luminance) {
+    try {
+        // Create NetCDF file with enhanced format
+        netCDF::NcFile dataFile(filename, netCDF::NcFile::replace, netCDF::NcFile::nc4);
+
+        // Define dimensions
+        auto timeDim = dataFile.addDim(&quot;time&quot;, times.size());
+        auto latDim = dataFile.addDim(&quot;latitude&quot;, latitudes.size());
+        auto lonDim = dataFile.addDim(&quot;longitude&quot;, longitudes.size());
+
+        // Define coordinate variables
+        auto timeVar = dataFile.addVar(&quot;time&quot;, netCDF::ncDouble, timeDim);
+        auto latVar = dataFile.addVar(&quot;latitude&quot;, netCDF::ncDouble, latDim);
+        auto lonVar = dataFile.addVar(&quot;longitude&quot;, netCDF::ncDouble, lonDim);
+
+        // Define data variables with compression
+        std::vector&lt;netCDF::NcDim&gt; dims = {timeDim, latDim, lonDim};
+        auto irradianceVar = dataFile.addVar(&quot;solar_irradiance&quot;, netCDF::ncDouble, dims);
+        auto luminanceVar = dataFile.addVar(&quot;luminance&quot;, netCDF::ncDouble, dims);
+
+        // Enable compression for data variables
+        irradianceVar.setCompression(true, true, 9);  // shuffle + deflate level 9
+        luminanceVar.setCompression(true, true, 9);   // shuffle + deflate level 9
+
+        // Add chunking for better compression and access
+        std::vector&lt;size_t&gt; chunkSizes = {1, latitudes.size(), longitudes.size()};
+        irradianceVar.setChunking(netCDF::NcVar::nc_CHUNKED, chunkSizes);
+        luminanceVar.setChunking(netCDF::NcVar::nc_CHUNKED, chunkSizes);
+
+        // Rest of the function remains the same...
+    timeVar.putAtt(&quot;units&quot;, &quot;hours since 1950-01-01 00:00:00&quot;);
+        timeVar.putAtt(&quot;calendar&quot;, &quot;gregorian&quot;);
+        irradianceVar.putAtt(&quot;units&quot;, &quot;W/m²&quot;);
+        irradianceVar.putAtt(&quot;long_name&quot;, &quot;Solar Irradiance&quot;);
+        luminanceVar.putAtt(&quot;units&quot;, &quot;lux&quot;);
+        luminanceVar.putAtt(&quot;long_name&quot;, &quot;Luminance&quot;);
+        // Global attributes
+        auto nowTime = std::chrono::system_clock::now();
+        auto now = std::chrono::system_clock::to_time_t(nowTime);
+        dataFile.putAtt(&quot;Conventions&quot;, &quot;CF-1.6&quot;);
+        dataFile.putAtt(&quot;title&quot;, &quot;Solar Irradiance and Luminance Data&quot;);
+        dataFile.putAtt(&quot;source&quot;, &quot;Generated from SPICE calculations&quot;);
+        dataFile.putAtt(&quot;constants&quot;, &quot;93 # lumens/m² per W/m² \n 1361 # W/m²&quot;);
+        dataFile.putAtt(&quot;MadeBy&quot;, &quot;NitroxHead&quot;);
+        dataFile.putAtt(&quot;history&quot;, &quot;Created on &quot; + std::string(std::ctime(&amp;now)));
+        // Write data
+        timeVar.putVar(times.data());
+        latVar.putVar(latitudes.data());
+        lonVar.putVar(longitudes.data());
+        // Write irradiance and luminance data
+        std::vector&lt;size_t&gt; startp = {0, 0, 0};
+        std::vector&lt;size_t&gt; countp = {times.size(), latitudes.size(), longitudes.size()};
+        irradianceVar.putVar(startp, countp, solarIrradiance.data());
+        luminanceVar.putVar(startp, countp, luminance.data());
+
+    } catch (netCDF::exceptions::NcException&amp; e) {
+        std::cerr &lt;&lt; &quot;NetCDF exception: &quot; &lt;&lt; e.what() &lt;&lt; std::endl;
+        exit(1);
+    }
+    std::cout &lt;&lt; &quot;Created &quot; &lt;&lt; filename &lt;&lt; &quot; with enhanced compression&quot; &lt;&lt; std::endl;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 5) {
+        std::cerr &lt;&lt; &quot;Usage: &quot; &lt;&lt; argv[0] &lt;&lt; &quot; &lt;start_datetime&gt; &lt;interval_minutes&gt; &lt;num_calculations&gt; &lt;resolution&gt;&quot; &lt;&lt; std::endl;
+        std::cerr &lt;&lt; &quot;Example: &quot; &lt;&lt; argv[0] &lt;&lt; &quot; \&quot;2019-01-01T00:00:00.000\&quot; 180 8 0.08333588&quot; &lt;&lt; std::endl;
+        return 1;
+    }
+
+    std::string startDate = argv[1];
+    int intervalMinutes = std::stoi(argv[2]);
+    int numCalculations = std::stoi(argv[3]);
+    double resolution = std::stod(argv[4]);
+
+    // Load SPICE kernels
+    furnsh_c(&quot;de421.bsp&quot;);
+    furnsh_c(&quot;naif0012.tls&quot;);
+    furnsh_c(&quot;pck00010.tpc&quot;);
+    furnsh_c(&quot;earth_latest_high_prec.bpc&quot;);
+
+    // Convert start datetime to ET
+    double startEt;
+    str2et_c(startDate.c_str(), &amp;startEt);
+
+    // Print loaded start time in ET and UTC for debug
+    std::cout &lt;&lt; &quot;Start ET: &quot; &lt;&lt; startEt &lt;&lt; std::endl;
+    char utcStr[30];
+    et2utc_c(startEt, &quot;ISOC&quot;, 3, 30, utcStr);
+    std::cout &lt;&lt; &quot;Start Time (UTC): &quot; &lt;&lt; utcStr &lt;&lt; std::endl;
+
+    // Create a grid of latitude and longitude coordinates
+    std::vector&lt;double&gt; latitudes, longitudes;
+    for (double lat = -90.0; lat &lt;= 90.0; lat += resolution) {
+        latitudes.push_back(lat);
+    }
+    for (double lon = -180.0; lon &lt;= 180.0; lon += resolution) {
+        longitudes.push_back(lon);
+    }
+
+    // Generate time steps
+    std::vector&lt;double&gt; times;
+    for (int i = 0; i &lt; numCalculations; ++i) {
+        times.push_back(startEt + i * (intervalMinutes * 60.0)); // Convert minutes to seconds
+    }
+
+    // Print generated times in UTC for debug
+    for (double t : times) {
+        et2utc_c(t, &quot;C&quot;, 3, 30, utcStr);
+        std::cout &lt;&lt; &quot;Time (UTC): &quot; &lt;&lt; utcStr &lt;&lt; std::endl;
+    }
+
+    // Initialize data structures using the Matrix3D class
+    Matrix3D solarIrradiance(times.size(), latitudes.size(), longitudes.size());
+    Matrix3D luminance(times.size(), latitudes.size(), longitudes.size());
+
+    // Calculate solar data
+    for (size_t t = 0; t &lt; times.size(); ++t) {
+        std::cout &lt;&lt; &quot;Calculating for time step &quot; &lt;&lt; t + 1 &lt;&lt; &quot; of &quot; &lt;&lt; times.size() &lt;&lt; std::endl;
+        for (size_t i = 0; i &lt; latitudes.size(); ++i) {
+            for (size_t j = 0; j &lt; longitudes.size(); ++j) {
+                double irr, lum;
+                calculateSolarData(times[t], latitudes[i], longitudes[j], irr, lum);
+                solarIrradiance(t, i, j) = irr;
+                luminance(t, i, j) = lum;
+            }
+        }
+    }
+
+    // Create output filename based on start date
+    std::tm tm = {};
+    std::istringstream ss(startDate);
+    ss &gt;&gt; std::get_time(&amp;tm, &quot;%Y-%m-%dT%H:%M:%S&quot;);
+    std::ostringstream oss;
+    oss &lt;&lt; &quot;solar_data_&quot; &lt;&lt; std::put_time(&amp;tm, &quot;%Y%m%d_%H%M%S&quot;) &lt;&lt; &quot;_res&quot; &lt;&lt; resolution &lt;&lt; &quot;.nc&quot;;
+    std::string outputFilename = oss.str();
+
+    // Create NetCDF output file
+    createNetCDFOutput(outputFilename, times, latitudes, longitudes, solarIrradiance, luminance);
+
+    std::cout &lt;&lt; &quot;Output saved to: &quot; &lt;&lt; outputFilename &lt;&lt; std::endl;
+
+    // Unload SPICE kernels
+    kclear_c();
+    return 0;
+}</code></pre><p><br></p></div></article></main><div class="scene scene--bottom"><img src="/assets/img/mountain.jpg" alt="Snow-covered volcanic mountain range under a pale sky" class="scene-photo" height="753" width="1600" loading="lazy"><footer class="scene-credits"><span>© 2026 NitroxHead</span></footer></div><script src="/assets/trek.js" defer="defer"></script></body></html>
